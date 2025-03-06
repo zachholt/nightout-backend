@@ -1,5 +1,5 @@
 FROM eclipse-temurin:17-alpine
 WORKDIR /app
-COPY target/nightoutbackend-0.0.1-SNAPSHOT.jar nightoutbackend.jar
+COPY target/nightout-backend-0.0.1-SNAPSHOT.jar nightout-backend.jar
 EXPOSE 8080
-CMD ["java", "-jar", "nightoutbackend.jar"]
+CMD ["java", "-jar", "nightout-backend.jar"]

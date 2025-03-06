@@ -23,10 +23,10 @@ jobs:
           docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}
       - name: Docker Build
         run: |
-          docker build -t zachholt/nightoutbackend .
+          docker build -t zachholt/nightout-backend .
 
       - name: Push Image
-        run: docker push zachholt/nightoutbackend:latest
+        run: docker push zachholt/nightout-backend:latest
 
 
 
@@ -36,10 +36,10 @@ jobs:
       steps:
         - name: Pull Docker Image
           run: |
-            sudo docker pull zachholt/nightoutbackend:latest
+            sudo docker pull zachholt/nightout-backend:latest
         - name: Remove Container
           run: |
-            sudo docker rm -f nightoutbackend
+            sudo docker rm -f nightout-backend
         - name: Run Docker Container
           run: |
-            sudo docker run -d -p 8080:8080 --name nightoutbackend zachholt/nightoutbackend:latest
+            sudo docker run -d -p 8080:8080 --name nightout-backend zachholt/nightout-backend:latest
