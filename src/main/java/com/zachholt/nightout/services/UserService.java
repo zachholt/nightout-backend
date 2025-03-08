@@ -5,7 +5,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.zachholt.nightout.models.User;
 import com.zachholt.nightout.repos.UserRepository;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -68,5 +70,26 @@ public class UserService {
             return user;
         }
         return null;
+    }
+    
+    public User updateUserCoordinates(String email, String coordinates) {
+        User user = userRepository.findByEmail(email);
+        if (user != null) {
+            user.setCoordinates(coordinates);
+            user = userRepository.save(user);
+            // Don't return the password
+            user.setPassword(null);
+            return user;
+        }
+        return null;
+    }
+    
+    // Find users at exact coordinates
+    public List<User> getUsersByCoordinates(String coordinates) {
+        List<User> users = userRepository.findByCoordinates(coordinates);
+        // Don't return passwords
+        return users.stream()
+            .peek(user -> user.setPassword(null))
+            .collect(Collectors.toList());
     }
 }
