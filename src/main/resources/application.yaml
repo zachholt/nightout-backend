@@ -2,24 +2,20 @@ spring:
   application:
     name: NightoutAPI
   datasource:
-    url: jdbc:sqlite:nightout.db
-    driver-class-name: org.sqlite.JDBC
+    url: jdbc:h2:mem:nightoutdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
   jpa:
-    database-platform: org.hibernate.community.dialect.SQLiteDialect
-    hibernate:
-      ddl-auto: none
+    database-platform: org.hibernate.dialect.H2Dialect
+    defer-datasource-initialization: true
     show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
   h2:
     console:
       enabled: true
   sql:
     init:
       mode: always
-      schema-locations: classpath:schema.sql
-      continue-on-error: false
 
 server:
   port: 8080

@@ -7,19 +7,17 @@ import com.zachholt.nightout.models.User;
 import com.zachholt.nightout.models.UserResponse;
 import com.zachholt.nightout.services.UserService;
 
-import jakarta.validation.Valid;
-
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
-public class AuthController {
+public class UserController {
 
     @Autowired
     private UserService userService;
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody User loginRequest) {
-        User user = userService.authenticateUser(loginRequest.getEmail(), loginRequest.getPassword());
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        User user = userService.getUserById(id);
         if (user != null) {
             return ResponseEntity.ok(new UserResponse(
                 user.getId(),
@@ -30,17 +28,13 @@ public class AuthController {
                 user.getCoordinates()
             ));
         }
-        return ResponseEntity.badRequest().body("Invalid credentials");
+        return ResponseEntity.notFound().build();
     }
-
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody User registerRequest) {
-        if (registerRequest.getName() == null || registerRequest.getName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Name is required for registration");
-        }
-        
-        try {
-            User user = userService.registerUser(registerRequest);
+    
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@RequestParam String email) {
+        User user = userService.getUserByEmail(email);
+        if (user != null) {
             return ResponseEntity.ok(new UserResponse(
                 user.getId(),
                 user.getName(),
@@ -49,14 +43,7 @@ public class AuthController {
                 user.getProfileImage(),
                 user.getCoordinates()
             ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
         }
-    }
-
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
-        // In a real application, you would invalidate the session/token here
-        return ResponseEntity.ok().build();
+        return ResponseEntity.notFound().build();
     }
 } 

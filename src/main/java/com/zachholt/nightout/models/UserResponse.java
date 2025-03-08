@@ -7,12 +7,16 @@ public class UserResponse {
     private String name;
     private String email;
     private LocalDateTime createdAt;
+    private String profileImage;
+    private String coordinates;
 
-    public UserResponse(Long id, String name, String email, LocalDateTime createdAt) {
+    public UserResponse(Long id, String name, String email, LocalDateTime createdAt, String profileImage, String coordinates) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.createdAt = createdAt;
+        this.profileImage = profileImage;
+        this.coordinates = coordinates;
     }
 
     // Getters and setters
@@ -46,5 +50,21 @@ public class UserResponse {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    
+    public String getProfileImage() {
+        return profileImage;
+    }
+
+    public void setProfileImage(String profileImage) {
+        this.profileImage = profileImage;
+    }
+
+    public String getCoordinates() {
+        return coordinates;
+    }
+
+    public void setCoordinates(String coordinates) {
+        this.coordinates = coordinates;
     }
 } 
