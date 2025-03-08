@@ -22,6 +22,16 @@ public class UserService {
         
         // Hash the password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        
+        // Set default values if not provided
+        if (user.getProfileImage() == null || user.getProfileImage().trim().isEmpty()) {
+            user.setProfileImage("https://example.com/default-profile.jpg");
+        }
+        
+        if (user.getCoordinates() == null || user.getCoordinates().trim().isEmpty()) {
+            user.setCoordinates("0,0");
+        }
+        
         return userRepository.save(user);
     }
 

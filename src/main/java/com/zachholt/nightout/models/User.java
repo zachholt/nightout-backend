@@ -33,11 +33,11 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "profileImage", nullable = false)
-    private String profileImage;
+    @Column(name = "profileImage")
+    private String profileImage = "https://example.com/default-profile.jpg";
 
-    @Column(name = "coordinates", nullable = false)
-    private String coordinates;
+    @Column(name = "coordinates")
+    private String coordinates = "0,0";
 
     public Long getId() {
         return id;
