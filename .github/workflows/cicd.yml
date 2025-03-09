@@ -34,12 +34,62 @@ jobs:
       needs:  build
       runs-on: [ec2-runner]
       steps:
+        - name: Checkout
+          uses: actions/checkout@main
+          
+        - name: Create Docker Network
+          run: |
+            sudo docker network create nightout-network || true
+            
+        - name: Start PostgreSQL Container
+          run: |
+            # Check if container exists and remove it if it does
+            sudo docker rm -f nightout-postgres || true
+            
+            # Start PostgreSQL container
+            sudo docker run -d \
+              --name nightout-postgres \
+              --network nightout-network \
+              -e POSTGRES_DB=nightoutdb \
+              -e POSTGRES_USER=postgres \
+              -e POSTGRES_PASSWORD=postgres \
+              -v postgres-data:/var/lib/postgresql/data \
+              -p 5432:5432 \
+              postgres:14
+              
+        - name: Wait for PostgreSQL to be ready
+          run: |
+            # Wait for PostgreSQL to be ready
+            for i in {1..30}; do
+              if sudo docker exec nightout-postgres pg_isready -U postgres; then
+                echo "PostgreSQL is ready!"
+                break
+              fi
+              echo "Waiting for PostgreSQL to be ready... ($i/30)"
+              sleep 2
+            done
+            
         - name: Pull Docker Image
           run: |
             sudo docker pull zachholt/nightout-backend:latest
+            
         - name: Remove Container
           run: |
-            sudo docker rm -f nightout-backend
+            sudo docker rm -f nightout-backend || true
+            
         - name: Run Docker Container
           run: |
-            sudo docker run -d -p 8080:8080 --name nightout-backend zachholt/nightout-backend:latest
+            sudo docker run -d \
+              --name nightout-backend \
+              --network nightout-network \
+              -e SPRING_DATASOURCE_URL=jdbc:postgresql://nightout-postgres:5432/nightoutdb \
+              -e SPRING_DATASOURCE_USERNAME=postgres \
+              -e SPRING_DATASOURCE_PASSWORD=postgres \
+              -p 8080:8080 \
+              zachholt/nightout-backend:latest
+              
+        - name: Check Container Status
+          run: |
+            sleep 10
+            sudo docker ps
+            sudo docker logs nightout-backend --tail 50
