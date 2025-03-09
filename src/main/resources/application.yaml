@@ -8,13 +8,21 @@ spring:
     password: postgres
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
-    defer-datasource-initialization: false
+    defer-datasource-initialization: true
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
   sql:
     init:
       mode: always
+      schema-locations: classpath:schema.sql
 
 server:
   port: 8080
