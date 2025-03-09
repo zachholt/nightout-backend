@@ -2,17 +2,16 @@ spring:
   application:
     name: NightoutAPI
   datasource:
-    url: jdbc:h2:mem:nightoutdb
-    driverClassName: org.h2.Driver
-    username: sa
-    password: password
+    url: jdbc:postgresql://postgres:5432/nightoutdb
+    driverClassName: org.postgresql.Driver
+    username: postgres
+    password: postgres
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
-    defer-datasource-initialization: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    defer-datasource-initialization: false
     show-sql: true
-  h2:
-    console:
-      enabled: true
+    hibernate:
+      ddl-auto: update
   sql:
     init:
       mode: always
