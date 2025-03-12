@@ -70,7 +70,7 @@ jobs:
             sudo docker run -d \
               --name nightout-postgres \
               --network nightout-network \
-              -e POSTGRES_DB=nightoutdb \
+              -e POSTGRES_DB=postgres \
               -e POSTGRES_USER=postgres \
               -e POSTGRES_PASSWORD=postgres \
               -v postgres-data:/var/lib/postgresql/data \
@@ -91,7 +91,10 @@ jobs:
             
         - name: Initialize Database
           run: |
-            # Create database schema
+            # First create the database if it doesn't exist
+            sudo docker exec nightout-postgres psql -U postgres -c "CREATE DATABASE nightoutdb;" || echo "Database may already exist, continuing..."
+            
+            # Then create database schema
             sudo docker exec nightout-postgres psql -U postgres -d nightoutdb -c "
             DROP SEQUENCE IF EXISTS user_id_seq;
             

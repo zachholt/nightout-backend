@@ -5,7 +5,7 @@ services:
     image: postgres:14
     container_name: nightout-postgres
     environment:
-      POSTGRES_DB: nightoutdb
+      POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -30,6 +30,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://nightout-postgres:5432/nightoutdb
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      SPRING_SQL_INIT_MODE: never
     ports:
       - "8080:8080"
     networks:
