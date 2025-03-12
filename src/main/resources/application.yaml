@@ -2,10 +2,15 @@ spring:
   application:
     name: NightoutAPI
   datasource:
-    url: jdbc:postgresql://postgres:5432/nightoutdb
+    url: jdbc:postgresql://nightout-postgres:5432/nightoutdb
     driverClassName: org.postgresql.Driver
     username: postgres
     password: postgres
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      initialization-fail-timeout: 60000
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     defer-datasource-initialization: true
@@ -23,6 +28,7 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema.sql
+      continue-on-error: true
 
 server:
   port: 8080

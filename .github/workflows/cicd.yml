@@ -89,6 +89,32 @@ jobs:
               sleep 2
             done
             
+        - name: Initialize Database
+          run: |
+            # Create database schema
+            sudo docker exec nightout-postgres psql -U postgres -d nightoutdb -c "
+            DROP SEQUENCE IF EXISTS user_id_seq;
+            
+            CREATE SEQUENCE IF NOT EXISTS user_id_seq
+                INCREMENT 1
+                START 1
+                MINVALUE 1
+                MAXVALUE 9223372036854775807
+                CACHE 1;
+                
+            DROP TABLE IF EXISTS users CASCADE;
+            
+            CREATE TABLE IF NOT EXISTS users (
+                id BIGINT NOT NULL DEFAULT nextval('user_id_seq'),
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) NOT NULL UNIQUE,
+                password VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                profile_image VARCHAR(255),
+                coordinates VARCHAR(255),
+                CONSTRAINT users_pkey PRIMARY KEY (id)
+            );"
+            
         - name: Pull Docker Image
           run: |
             sudo docker pull zachholt/nightout-backend:latest
@@ -105,6 +131,8 @@ jobs:
               -e SPRING_DATASOURCE_URL=jdbc:postgresql://nightout-postgres:5432/nightoutdb \
               -e SPRING_DATASOURCE_USERNAME=postgres \
               -e SPRING_DATASOURCE_PASSWORD=postgres \
+              -e SPRING_JPA_HIBERNATE_DDL_AUTO=none \
+              -e SPRING_SQL_INIT_MODE=never \
               -p 8080:8080 \
               zachholt/nightout-backend:latest
               
