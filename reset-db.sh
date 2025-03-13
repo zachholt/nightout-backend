@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+echo "Resetting database for testing..."
+
 # Wait for PostgreSQL to be ready
 echo "Waiting for PostgreSQL to be ready..."
 until docker exec nightout-postgres pg_isready -U postgres; do
@@ -9,19 +11,17 @@ until docker exec nightout-postgres pg_isready -U postgres; do
 done
 echo "PostgreSQL is ready!"
 
-# Create the database if it doesn't exist
-echo "Creating database if it doesn't exist..."
-docker exec nightout-postgres psql -U postgres -c "CREATE DATABASE nightoutdb;" || echo "Database may already exist, continuing..."
+# Drop the database if it exists
+echo "Dropping database if it exists..."
+docker exec nightout-postgres psql -U postgres -c "DROP DATABASE IF EXISTS nightoutdb;"
+
+# Create a fresh database
+echo "Creating a fresh database..."
+docker exec nightout-postgres psql -U postgres -c "CREATE DATABASE nightoutdb;"
 
 # Initialize the database schema
 echo "Initializing database schema..."
 docker exec nightout-postgres psql -U postgres -d nightoutdb -c "
--- Drop table first to avoid dependency issues
-DROP TABLE IF EXISTS users CASCADE;
-
--- Then drop the sequence
-DROP SEQUENCE IF EXISTS user_id_seq;
-
 -- Create sequence for user IDs
 CREATE SEQUENCE IF NOT EXISTS user_id_seq
     INCREMENT 1
@@ -43,4 +43,4 @@ CREATE TABLE IF NOT EXISTS users (
     CONSTRAINT users_pkey PRIMARY KEY (id)
 );"
 
-echo "Database initialization complete!" 
+echo "Database reset complete!" 

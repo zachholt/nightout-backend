@@ -91,13 +91,15 @@ jobs:
             
         - name: Initialize Database
           run: |
-            # First create the database if it doesn't exist
-            sudo docker exec nightout-postgres psql -U postgres -c "CREATE DATABASE nightoutdb;" || echo "Database may already exist, continuing..."
+            # Drop the database if it exists
+            sudo docker exec nightout-postgres psql -U postgres -c "DROP DATABASE IF EXISTS nightoutdb;"
             
-            # Then create database schema
+            # Create a fresh database
+            sudo docker exec nightout-postgres psql -U postgres -c "CREATE DATABASE nightoutdb;"
+            
+            # Initialize the database schema
             sudo docker exec nightout-postgres psql -U postgres -d nightoutdb -c "
-            DROP SEQUENCE IF EXISTS user_id_seq;
-            
+            -- Create sequence for user IDs
             CREATE SEQUENCE IF NOT EXISTS user_id_seq
                 INCREMENT 1
                 START 1
@@ -105,8 +107,7 @@ jobs:
                 MAXVALUE 9223372036854775807
                 CACHE 1;
                 
-            DROP TABLE IF EXISTS users CASCADE;
-            
+            -- Create users table with latitude and longitude
             CREATE TABLE IF NOT EXISTS users (
                 id BIGINT NOT NULL DEFAULT nextval('user_id_seq'),
                 name VARCHAR(255) NOT NULL,
@@ -114,7 +115,8 @@ jobs:
                 password VARCHAR(255) NOT NULL,
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 profile_image VARCHAR(255),
-                coordinates VARCHAR(255),
+                latitude DOUBLE PRECISION DEFAULT 0.0,
+                longitude DOUBLE PRECISION DEFAULT 0.0,
                 CONSTRAINT users_pkey PRIMARY KEY (id)
             );"
             

@@ -1,3 +1,6 @@
+-- Drop table if exists (must be dropped before the sequence)
+DROP TABLE IF EXISTS users CASCADE;
+
 -- Drop sequence if exists
 DROP SEQUENCE IF EXISTS user_id_seq;
 
@@ -8,9 +11,6 @@ CREATE SEQUENCE IF NOT EXISTS user_id_seq
     MINVALUE 1
     MAXVALUE 9223372036854775807
     CACHE 1;
-
--- Drop table if exists
-DROP TABLE IF EXISTS users CASCADE;
 
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
