@@ -35,12 +35,12 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "profileImage")
+    @Column(name = "profile_image")
     private String profileImage = "https://example.com/default-profile.jpg";
 
     @Column(name = "latitude")
     private Double latitude = 0.0;
-
+    
     @Column(name = "longitude")
     private Double longitude = 0.0;
 

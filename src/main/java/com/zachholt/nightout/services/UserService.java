@@ -77,7 +77,7 @@ public class UserService {
         return null;
     }
     
-    // Update to use separate latitude and longitude
+    // Update to use separate latitude and longitude fields
     public User updateUserLocation(String email, Double latitude, Double longitude) {
         User user = userRepository.findByEmail(email);
         if (user != null) {
@@ -93,20 +93,22 @@ public class UserService {
     
     // Find users near a location within a radius
     public List<User> getUsersByLocation(Double latitude, Double longitude, Double radiusInMeters) {
-        // For now, we'll implement a simple version that just returns all users
-        // In a real implementation, you would use a spatial query or calculate distance
-        List<User> users = userRepository.findAll();
-        
-        // Filter users by distance (simple Euclidean distance for now)
-        // In a real implementation, you would use the Haversine formula for accurate distance
+        // Convert radius from meters to degrees (approximate)
         double radiusInDegrees = radiusInMeters / 111000.0; // Rough conversion from meters to degrees
         
-        List<User> nearbyUsers = users.stream()
+        // Calculate bounding box
+        double minLat = latitude - radiusInDegrees;
+        double maxLat = latitude + radiusInDegrees;
+        double minLng = longitude - radiusInDegrees;
+        double maxLng = longitude + radiusInDegrees;
+        
+        // Find users within the bounding box
+        List<User> usersInBounds = userRepository.findUsersWithinBounds(minLat, maxLat, minLng, maxLng);
+        
+        // Further filter by exact distance (using Euclidean distance for simplicity)
+        // In a real implementation, you would use the Haversine formula for accurate distance
+        List<User> nearbyUsers = usersInBounds.stream()
             .filter(user -> {
-                if (user.getLatitude() == null || user.getLongitude() == null) {
-                    return false;
-                }
-                
                 double distance = Math.sqrt(
                     Math.pow(user.getLatitude() - latitude, 2) + 
                     Math.pow(user.getLongitude() - longitude, 2)
