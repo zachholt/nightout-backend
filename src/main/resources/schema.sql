@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL,
     profile_image VARCHAR(255),
-    coordinates VARCHAR(255),
+    latitude DOUBLE PRECISION DEFAULT 0.0,
+    longitude DOUBLE PRECISION DEFAULT 0.0,
     CONSTRAINT users_pkey PRIMARY KEY (id)
 ); 
 

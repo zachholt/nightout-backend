@@ -29,7 +29,8 @@ public class UserController {
                 user.getEmail(),
                 user.getCreatedAt(),
                 user.getProfileImage(),
-                user.getCoordinates()
+                user.getLatitude(),
+                user.getLongitude()
             ));
         }
         return ResponseEntity.notFound().build();
@@ -45,15 +46,20 @@ public class UserController {
                 user.getEmail(),
                 user.getCreatedAt(),
                 user.getProfileImage(),
-                user.getCoordinates()
+                user.getLatitude(),
+                user.getLongitude()
             ));
         }
         return ResponseEntity.notFound().build();
     }
     
     @PostMapping("/checkin")
-    public ResponseEntity<?> checkIn(@RequestParam String email, @RequestParam String coordinates) {
-        User user = userService.updateUserCoordinates(email, coordinates);
+    public ResponseEntity<?> checkIn(
+        @RequestParam String email, 
+        @RequestParam Double latitude,
+        @RequestParam Double longitude) {
+        
+        User user = userService.updateUserLocation(email, latitude, longitude);
         if (user != null) {
             return ResponseEntity.ok(new UserResponse(
                 user.getId(),
@@ -61,15 +67,20 @@ public class UserController {
                 user.getEmail(),
                 user.getCreatedAt(),
                 user.getProfileImage(),
-                user.getCoordinates()
+                user.getLatitude(),
+                user.getLongitude()
             ));
         }
         return ResponseEntity.badRequest().body("User not found or check-in failed");
     }
     
     @GetMapping("/by-coordinates")
-    public ResponseEntity<?> getUsersByCoordinates(@RequestParam String coordinates) {
-        List<User> users = userService.getUsersByCoordinates(coordinates);
+    public ResponseEntity<?> getUsersByLocation(
+        @RequestParam Double latitude,
+        @RequestParam Double longitude,
+        @RequestParam(required = false, defaultValue = "500") Double radiusInMeters) {
+        
+        List<User> users = userService.getUsersByLocation(latitude, longitude, radiusInMeters);
         List<UserResponse> userResponses = users.stream()
             .map(user -> new UserResponse(
                 user.getId(),
@@ -77,7 +88,8 @@ public class UserController {
                 user.getEmail(),
                 user.getCreatedAt(),
                 user.getProfileImage(),
-                user.getCoordinates()
+                user.getLatitude(),
+                user.getLongitude()
             ))
             .collect(Collectors.toList());
         return ResponseEntity.ok(userResponses);

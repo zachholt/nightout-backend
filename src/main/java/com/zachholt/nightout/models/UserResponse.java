@@ -8,15 +8,17 @@ public class UserResponse {
     private String email;
     private LocalDateTime createdAt;
     private String profileImage;
-    private String coordinates;
+    private Double latitude;
+    private Double longitude;
 
-    public UserResponse(Long id, String name, String email, LocalDateTime createdAt, String profileImage, String coordinates) {
+    public UserResponse(Long id, String name, String email, LocalDateTime createdAt, String profileImage, Double latitude, Double longitude) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.createdAt = createdAt;
         this.profileImage = profileImage;
-        this.coordinates = coordinates;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     // Getters and setters
@@ -60,11 +62,19 @@ public class UserResponse {
         this.profileImage = profileImage;
     }
 
-    public String getCoordinates() {
-        return coordinates;
+    public Double getLatitude() {
+        return latitude;
     }
 
-    public void setCoordinates(String coordinates) {
-        this.coordinates = coordinates;
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+
+    public Double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
     }
 } 

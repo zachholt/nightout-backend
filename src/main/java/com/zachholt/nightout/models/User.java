@@ -38,8 +38,11 @@ public class User {
     @Column(name = "profileImage")
     private String profileImage = "https://example.com/default-profile.jpg";
 
-    @Column(name = "coordinates")
-    private String coordinates = "0,0";
+    @Column(name = "latitude")
+    private Double latitude = 0.0;
+
+    @Column(name = "longitude")
+    private Double longitude = 0.0;
 
     public Long getId() {
         return id;
@@ -85,11 +88,19 @@ public class User {
         this.profileImage = profileImage;
     }
 
-    public String getCoordinates() {
-        return coordinates;
+    public Double getLatitude() {
+        return latitude;
     }
 
-    public void setCoordinates(String coordinates) {
-        this.coordinates = coordinates;
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+
+    public Double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
     }
 }

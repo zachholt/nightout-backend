@@ -30,8 +30,13 @@ public class UserService {
             user.setProfileImage("https://example.com/default-profile.jpg");
         }
         
-        if (user.getCoordinates() == null || user.getCoordinates().trim().isEmpty()) {
-            user.setCoordinates("0,0");
+        // Set default location if not provided
+        if (user.getLatitude() == null) {
+            user.setLatitude(0.0);
+        }
+        
+        if (user.getLongitude() == null) {
+            user.setLongitude(0.0);
         }
         
         return userRepository.save(user);
@@ -72,10 +77,12 @@ public class UserService {
         return null;
     }
     
-    public User updateUserCoordinates(String email, String coordinates) {
+    // Update to use separate latitude and longitude
+    public User updateUserLocation(String email, Double latitude, Double longitude) {
         User user = userRepository.findByEmail(email);
         if (user != null) {
-            user.setCoordinates(coordinates);
+            user.setLatitude(latitude);
+            user.setLongitude(longitude);
             user = userRepository.save(user);
             // Don't return the password
             user.setPassword(null);
@@ -84,12 +91,32 @@ public class UserService {
         return null;
     }
     
-    // Find users at exact coordinates
-    public List<User> getUsersByCoordinates(String coordinates) {
-        List<User> users = userRepository.findByCoordinates(coordinates);
-        // Don't return passwords
-        return users.stream()
+    // Find users near a location within a radius
+    public List<User> getUsersByLocation(Double latitude, Double longitude, Double radiusInMeters) {
+        // For now, we'll implement a simple version that just returns all users
+        // In a real implementation, you would use a spatial query or calculate distance
+        List<User> users = userRepository.findAll();
+        
+        // Filter users by distance (simple Euclidean distance for now)
+        // In a real implementation, you would use the Haversine formula for accurate distance
+        double radiusInDegrees = radiusInMeters / 111000.0; // Rough conversion from meters to degrees
+        
+        List<User> nearbyUsers = users.stream()
+            .filter(user -> {
+                if (user.getLatitude() == null || user.getLongitude() == null) {
+                    return false;
+                }
+                
+                double distance = Math.sqrt(
+                    Math.pow(user.getLatitude() - latitude, 2) + 
+                    Math.pow(user.getLongitude() - longitude, 2)
+                );
+                
+                return distance <= radiusInDegrees;
+            })
             .peek(user -> user.setPassword(null))
             .collect(Collectors.toList());
+            
+        return nearbyUsers;
     }
 }
