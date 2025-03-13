@@ -27,7 +27,8 @@ public class AuthController {
                 user.getEmail(),
                 user.getCreatedAt(),
                 user.getProfileImage(),
-                user.getCoordinates()
+                user.getLatitude(),
+                user.getLongitude()
             ));
         }
         return ResponseEntity.badRequest().body("Invalid credentials");
@@ -47,7 +48,8 @@ public class AuthController {
                 user.getEmail(),
                 user.getCreatedAt(),
                 user.getProfileImage(),
-                user.getCoordinates()
+                user.getLatitude(),
+                user.getLongitude()
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
