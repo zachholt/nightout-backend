@@ -71,7 +71,13 @@ public class UserController {
             
             if (requestBody.containsKey("latitude")) {
                 try {
-                    latitude = Double.valueOf(requestBody.get("latitude").toString());
+                    // Handle null value in the request body
+                    Object latValue = requestBody.get("latitude");
+                    if (latValue != null && !latValue.toString().equals("null")) {
+                        latitude = Double.valueOf(latValue.toString());
+                    } else {
+                        latitude = null;
+                    }
                     System.out.println("Extracted latitude: " + latitude);
                 } catch (Exception e) {
                     System.out.println("Error extracting latitude: " + e.getMessage());
@@ -80,7 +86,13 @@ public class UserController {
             
             if (requestBody.containsKey("longitude")) {
                 try {
-                    longitude = Double.valueOf(requestBody.get("longitude").toString());
+                    // Handle null value in the request body
+                    Object longValue = requestBody.get("longitude");
+                    if (longValue != null && !longValue.toString().equals("null")) {
+                        longitude = Double.valueOf(longValue.toString());
+                    } else {
+                        longitude = null;
+                    }
                     System.out.println("Extracted longitude: " + longitude);
                 } catch (Exception e) {
                     System.out.println("Error extracting longitude: " + e.getMessage());
@@ -88,16 +100,23 @@ public class UserController {
             }
         }
         
-        // Validate that we have both latitude and longitude
-        if (latitude == null || longitude == null) {
-            System.out.println("Missing latitude or longitude");
+        // If both latitude and longitude are null, this is a checkout operation
+        boolean isCheckout = latitude == null && longitude == null;
+        
+        // Only validate coordinates for check-in, not for check-out
+        if (!isCheckout && (latitude == null || longitude == null)) {
+            System.out.println("Missing latitude or longitude for check-in");
             return ResponseEntity.badRequest().body("Latitude and longitude are required for check-in");
         }
         
         try {
             User user = userService.updateUserLocation(email, latitude, longitude);
             if (user != null) {
-                System.out.println("Check-in successful for user: " + user.getName());
+                if (isCheckout) {
+                    System.out.println("Check-out successful for user: " + user.getName());
+                } else {
+                    System.out.println("Check-in successful for user: " + user.getName());
+                }
                 return ResponseEntity.ok(new UserResponse(
                     user.getId(),
                     user.getName(),
@@ -109,12 +128,40 @@ public class UserController {
                 ));
             } else {
                 System.out.println("User not found for email: " + email);
-                return ResponseEntity.badRequest().body("User not found or check-in failed");
+                return ResponseEntity.badRequest().body("User not found or operation failed");
             }
         } catch (Exception e) {
-            System.out.println("Error during check-in: " + e.getMessage());
+            System.out.println("Error during operation: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Internal server error during check-in");
+            return ResponseEntity.status(500).body("Internal server error");
+        }
+    }
+    
+    @PostMapping("/checkout")
+    public ResponseEntity<?> checkOut(@RequestParam String email) {
+        System.out.println("Check-out request received for email: " + email);
+        
+        try {
+            User user = userService.updateUserLocation(email, null, null);
+            if (user != null) {
+                System.out.println("Check-out successful for user: " + user.getName());
+                return ResponseEntity.ok(new UserResponse(
+                    user.getId(),
+                    user.getName(),
+                    user.getEmail(),
+                    user.getCreatedAt(),
+                    user.getProfileImage(),
+                    user.getLatitude(),
+                    user.getLongitude()
+                ));
+            } else {
+                System.out.println("User not found for email: " + email);
+                return ResponseEntity.badRequest().body("User not found or check-out failed");
+            }
+        } catch (Exception e) {
+            System.out.println("Error during check-out: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Internal server error during check-out");
         }
     }
     
