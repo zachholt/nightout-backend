@@ -1,13 +1,13 @@
 package com.zachholt.nightout.controllers;
 
-import com.zachholt.nightout.models.User;
-import com.zachholt.nightout.models.Coordinate;
-import com.zachholt.nightout.models.UserResponse;
-import com.zachholt.nightout.services.UserService;
-import com.zachholt.nightout.services.CoordinateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.zachholt.nightout.models.User;
+import com.zachholt.nightout.models.UserResponse;
+import com.zachholt.nightout.services.UserService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -17,28 +17,43 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private CoordinateService coordinateService;
-
-    @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@RequestBody User user) {
-        User registeredUser = userService.registerUser(user);
-        if (registeredUser == null) {
-            return ResponseEntity.badRequest().build();
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@Valid @RequestBody User loginRequest) {
+        User user = userService.authenticateUser(loginRequest.getEmail(), loginRequest.getPassword());
+        if (user != null) {
+            return ResponseEntity.ok(new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getCreatedAt(),
+                user.getProfileImage(),
+                user.getLatitude(),
+                user.getLongitude()
+            ));
         }
-
-        return ResponseEntity.ok(new UserResponse(registeredUser));
+        return ResponseEntity.badRequest().body("Invalid credentials");
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<UserResponse> login(@RequestBody User loginRequest) {
-        User user = userService.authenticateUser(loginRequest.getEmail(), loginRequest.getPassword());
-        if (user == null) {
-            return ResponseEntity.badRequest().build();
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@Valid @RequestBody User registerRequest) {
+        if (registerRequest.getName() == null || registerRequest.getName().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Name is required for registration");
         }
-
-        Coordinate coordinate = coordinateService.getCurrentLocation(user.getId());
-        return ResponseEntity.ok(new UserResponse(user, coordinate));
+        
+        try {
+            User user = userService.registerUser(registerRequest);
+            return ResponseEntity.ok(new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getCreatedAt(),
+                user.getProfileImage(),
+                user.getLatitude(),
+                user.getLongitude()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/logout")
