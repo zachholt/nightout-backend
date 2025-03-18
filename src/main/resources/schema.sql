@@ -14,6 +14,9 @@ CREATE SEQUENCE IF NOT EXISTS favorite_id_seq
     MAXVALUE 9223372036854775807
     CACHE 1;
 
+-- Create sequence for coordinates
+CREATE SEQUENCE IF NOT EXISTS coordinate_id_seq;
+
 -- Create users table if it doesn't exist
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT NOT NULL DEFAULT nextval('user_id_seq'),
@@ -38,5 +41,15 @@ CREATE TABLE IF NOT EXISTS favorites (
     CONSTRAINT favorites_pkey PRIMARY KEY (id),
     CONSTRAINT favorites_user_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT favorites_unique_user_location UNIQUE (user_id, location_id)
+);
+
+-- Create coordinates table
+CREATE TABLE IF NOT EXISTS coordinates (
+    id BIGINT DEFAULT nextval('coordinate_id_seq') PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_user_coordinate UNIQUE (user_id)
 ); 
 
