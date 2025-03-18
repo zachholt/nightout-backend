@@ -4,10 +4,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.zachholt.nightout.models.User;
+import com.zachholt.nightout.models.Coordinate;
 import com.zachholt.nightout.repos.UserRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
@@ -16,6 +20,9 @@ public class UserService {
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    private CoordinateService coordinateService;
 
     public User registerUser(User user) {
         if (userRepository.findByEmail(user.getEmail()) != null) {
@@ -57,24 +64,11 @@ public class UserService {
     }
     
     public User getUserById(Long id) {
-        Optional<User> userOptional = userRepository.findById(id);
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            // Don't return the password
-            user.setPassword(null);
-            return user;
-        }
-        return null;
+        return userRepository.findById(id).orElse(null);
     }
     
     public User getUserByEmail(String email) {
-        User user = userRepository.findByEmail(email);
-        if (user != null) {
-            // Don't return the password
-            user.setPassword(null);
-            return user;
-        }
-        return null;
+        return userRepository.findByEmail(email).orElse(null);
     }
     
     // Update to use separate latitude and longitude fields
@@ -120,5 +114,51 @@ public class UserService {
             .collect(Collectors.toList());
             
         return nearbyUsers;
+    }
+
+    @Transactional
+    public List<Map<String, Object>> getNearbyUsers(Double latitude, Double longitude, Double radius) {
+        // Get all coordinates within radius
+        List<Coordinate> nearbyCoordinates = coordinateService.getNearbyCoordinates(latitude, longitude, radius);
+        
+        // Map coordinates to user responses
+        return nearbyCoordinates.stream().map(coordinate -> {
+            User user = coordinate.getUser();
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", user.getId());
+            response.put("name", user.getName());
+            response.put("email", user.getEmail());
+            response.put("profileImage", user.getProfileImage());
+            response.put("latitude", coordinate.getLatitude());
+            response.put("longitude", coordinate.getLongitude());
+            response.put("createdAt", user.getCreatedAt());
+            return response;
+        }).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public User updateUser(Long id, User updatedUser) {
+        return userRepository.findById(id)
+            .map(user -> {
+                if (updatedUser.getName() != null) {
+                    user.setName(updatedUser.getName());
+                }
+                if (updatedUser.getEmail() != null) {
+                    user.setEmail(updatedUser.getEmail());
+                }
+                if (updatedUser.getPassword() != null) {
+                    user.setPassword(updatedUser.getPassword());
+                }
+                if (updatedUser.getProfileImage() != null) {
+                    user.setProfileImage(updatedUser.getProfileImage());
+                }
+                return userRepository.save(user);
+            })
+            .orElse(null);
+    }
+
+    @Transactional
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
     }
 }

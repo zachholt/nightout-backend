@@ -1,13 +1,14 @@
 package com.zachholt.nightout.controllers;
 
+import com.zachholt.nightout.models.User;
+import com.zachholt.nightout.models.Coordinate;
+import com.zachholt.nightout.services.UserService;
+import com.zachholt.nightout.services.CoordinateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.zachholt.nightout.models.User;
-import com.zachholt.nightout.models.UserResponse;
-import com.zachholt.nightout.services.UserService;
-
-import jakarta.validation.Valid;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -17,43 +18,46 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody User loginRequest) {
-        User user = userService.authenticateUser(loginRequest.getEmail(), loginRequest.getPassword());
-        if (user != null) {
-            return ResponseEntity.ok(new UserResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getCreatedAt(),
-                user.getProfileImage(),
-                user.getLatitude(),
-                user.getLongitude()
-            ));
-        }
-        return ResponseEntity.badRequest().body("Invalid credentials");
-    }
+    @Autowired
+    private CoordinateService coordinateService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody User registerRequest) {
-        if (registerRequest.getName() == null || registerRequest.getName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Name is required for registration");
+    public ResponseEntity<Map<String, Object>> register(@RequestBody User user) {
+        User registeredUser = userService.registerUser(user);
+        if (registeredUser == null) {
+            return ResponseEntity.badRequest().build();
         }
-        
-        try {
-            User user = userService.registerUser(registerRequest);
-            return ResponseEntity.ok(new UserResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getCreatedAt(),
-                user.getProfileImage(),
-                user.getLatitude(),
-                user.getLongitude()
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", registeredUser.getId());
+        response.put("name", registeredUser.getName());
+        response.put("email", registeredUser.getEmail());
+        response.put("profileImage", registeredUser.getProfileImage());
+        response.put("latitude", null);
+        response.put("longitude", null);
+        response.put("createdAt", registeredUser.getCreatedAt());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> credentials) {
+        User user = userService.authenticateUser(credentials.get("email"), credentials.get("password"));
+        if (user == null) {
+            return ResponseEntity.badRequest().build();
         }
+
+        Coordinate coordinate = coordinateService.getCurrentLocation(user.getId());
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", user.getId());
+        response.put("name", user.getName());
+        response.put("email", user.getEmail());
+        response.put("profileImage", user.getProfileImage());
+        response.put("latitude", coordinate != null ? coordinate.getLatitude() : null);
+        response.put("longitude", coordinate != null ? coordinate.getLongitude() : null);
+        response.put("createdAt", user.getCreatedAt());
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/logout")
