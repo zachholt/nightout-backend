@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.HashMap;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.ArrayList;
 
 @Service
 public class UserService {
@@ -25,36 +26,25 @@ public class UserService {
     private CoordinateService coordinateService;
 
     public User registerUser(User user) {
-        if (userRepository.findByEmail(user.getEmail()) != null) {
-            throw new RuntimeException("Email already exists");
+        // Check if user with email already exists
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already registered");
         }
-        
-        // Hash the password before saving
+
+        // Encode password
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        
-        // Set default values if not provided
-        if (user.getProfileImage() == null || user.getProfileImage().trim().isEmpty()) {
-            user.setProfileImage("https://example.com/default-profile.jpg");
-        }
-        
-        // Set default location if not provided
-        if (user.getLatitude() == null) {
-            user.setLatitude(0.0);
-        }
-        
-        if (user.getLongitude() == null) {
-            user.setLongitude(0.0);
-        }
-        
         return userRepository.save(user);
     }
 
     public User authenticateUser(String email, String password) {
-        User user = userRepository.findByEmail(email);
-        if (user != null && passwordEncoder.matches(password, user.getPassword())) {
-            // Don't return the password
-            user.setPassword(null);
-            return user;
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (passwordEncoder.matches(password, user.getPassword())) {
+                // Don't return the password
+                user.setPassword(null);
+                return user;
+            }
         }
         return null;
     }
@@ -64,20 +54,9 @@ public class UserService {
     }
     
     public User getUserById(Long id) {
-        return userRepository.findById(id).orElse(null);
-    }
-    
-    public User getUserByEmail(String email) {
-        return userRepository.findByEmail(email).orElse(null);
-    }
-    
-    // Update to use separate latitude and longitude fields
-    public User updateUserLocation(String email, Double latitude, Double longitude) {
-        User user = userRepository.findByEmail(email);
-        if (user != null) {
-            user.setLatitude(latitude);
-            user.setLongitude(longitude);
-            user = userRepository.save(user);
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
             // Don't return the password
             user.setPassword(null);
             return user;
@@ -85,35 +64,56 @@ public class UserService {
         return null;
     }
     
-    // Find users near a location within a radius
-    public List<User> getUsersByLocation(Double latitude, Double longitude, Double radiusInMeters) {
-        // Convert radius from meters to degrees (approximate)
-        double radiusInDegrees = radiusInMeters / 111000.0; // Rough conversion from meters to degrees
-        
-        // Calculate bounding box
-        double minLat = latitude - radiusInDegrees;
-        double maxLat = latitude + radiusInDegrees;
-        double minLng = longitude - radiusInDegrees;
-        double maxLng = longitude + radiusInDegrees;
-        
-        // Find users within the bounding box
-        List<User> usersInBounds = userRepository.findUsersWithinBounds(minLat, maxLat, minLng, maxLng);
-        
-        // Further filter by exact distance (using Euclidean distance for simplicity)
-        // In a real implementation, you would use the Haversine formula for accurate distance
-        List<User> nearbyUsers = usersInBounds.stream()
-            .filter(user -> {
-                double distance = Math.sqrt(
-                    Math.pow(user.getLatitude() - latitude, 2) + 
-                    Math.pow(user.getLongitude() - longitude, 2)
-                );
-                
-                return distance <= radiusInDegrees;
-            })
-            .peek(user -> user.setPassword(null))
-            .collect(Collectors.toList());
-            
-        return nearbyUsers;
+    public User getUserByEmail(String email) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            // Don't return the password
+            user.setPassword(null);
+            return user;
+        }
+        return null;
+    }
+    
+    @Transactional
+    public User updateUserLocation(String email, Double latitude, Double longitude) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (latitude != null && longitude != null) {
+                coordinateService.updateLocation(user.getId(), latitude, longitude);
+            } else {
+                coordinateService.clearLocation(user.getId());
+            }
+            // Don't return the password
+            user.setPassword(null);
+            return user;
+        }
+        return null;
+    }
+    
+    public List<Map<String, Object>> getUsersByLocation(Double latitude, Double longitude, Double radiusInMeters) {
+        List<Map<String, Object>> userResponses = new ArrayList<>();
+        List<Coordinate> nearbyCoordinates = coordinateService.getNearbyCoordinates(latitude, longitude, radiusInMeters);
+
+        for (Coordinate coordinate : nearbyCoordinates) {
+            User user = coordinate.getUser();
+            // Don't return the password
+            user.setPassword(null);
+
+            Map<String, Object> userResponse = new HashMap<>();
+            userResponse.put("id", user.getId());
+            userResponse.put("name", user.getName());
+            userResponse.put("email", user.getEmail());
+            userResponse.put("profileImage", user.getProfileImage());
+            userResponse.put("latitude", coordinate.getLatitude());
+            userResponse.put("longitude", coordinate.getLongitude());
+            userResponse.put("createdAt", user.getCreatedAt());
+
+            userResponses.add(userResponse);
+        }
+
+        return userResponses;
     }
 
     @Transactional

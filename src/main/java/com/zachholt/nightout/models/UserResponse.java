@@ -11,14 +11,20 @@ public class UserResponse {
     private Double latitude;
     private Double longitude;
 
-    public UserResponse(Long id, String name, String email, LocalDateTime createdAt, String profileImage, Double latitude, Double longitude) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.createdAt = createdAt;
-        this.profileImage = profileImage;
-        this.latitude = latitude;
-        this.longitude = longitude;
+    // Constructor for user with coordinates
+    public UserResponse(User user, Coordinate coordinate) {
+        this.id = user.getId();
+        this.name = user.getName();
+        this.email = user.getEmail();
+        this.createdAt = user.getCreatedAt();
+        this.profileImage = user.getProfileImage();
+        this.latitude = coordinate != null ? coordinate.getLatitude() : null;
+        this.longitude = coordinate != null ? coordinate.getLongitude() : null;
+    }
+
+    // Constructor for user without coordinates
+    public UserResponse(User user) {
+        this(user, null);
     }
 
     // Getters and setters
