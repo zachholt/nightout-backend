@@ -3,6 +3,8 @@ package com.zachholt.nightout.services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import com.zachholt.nightout.models.User;
 import com.zachholt.nightout.repos.UserRepository;
 import java.util.List;

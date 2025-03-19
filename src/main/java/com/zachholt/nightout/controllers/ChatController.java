@@ -1,5 +1,6 @@
 package com.zachholt.nightout.controllers;
 
+import com.zachholt.nightout.models.ChatRequest;
 import com.zachholt.nightout.models.User;
 import com.zachholt.nightout.services.AIChatService;
 import com.zachholt.nightout.services.UserService;
@@ -27,11 +28,16 @@ public class ChatController {
             @RequestBody ChatRequest chatRequest
     ) {
         User user = userService.getCurrentUser(authentication);
+        
+        // Use provided location or fall back to user's stored location
+        Double latitude = chatRequest.getLatitude() != null ? chatRequest.getLatitude() : user.getLatitude();
+        Double longitude = chatRequest.getLongitude() != null ? chatRequest.getLongitude() : user.getLongitude();
+        
         return aiChatService.generateResponse(
             user,
             chatRequest.getMessage(),
-            chatRequest.getLatitude(),
-            chatRequest.getLongitude()
+            latitude,
+            longitude
         );
     }
 }
