@@ -2,35 +2,31 @@ package com.zachholt.nightout.models;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import org.hibernate.annotations.CreationTimestamp;
 
-@Entity(name = "chat_messages")
-public class ChatMessage {
+@Entity
+@Table(name = "coordinates")
+public class Coordinate {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "chat_message_id_seq")
-    @SequenceGenerator(name = "chat_message_id_seq", sequenceName = "chat_message_id_seq", allocationSize = 1)
-    @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "message", nullable = false, columnDefinition = "TEXT")
-    private String message;
-
-    @Column(name = "ai_response", nullable = false, columnDefinition = "TEXT")
-    private String aiResponse;
-
-    @Column(name = "latitude")
+    @Column(nullable = false)
     private Double latitude;
 
-    @Column(name = "longitude")
+    @Column(nullable = false)
     private Double longitude;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    // Default constructor
+    public Coordinate() {
+        this.createdAt = LocalDateTime.now();
+    }
 
     // Getters and setters
     public Long getId() {
@@ -47,22 +43,6 @@ public class ChatMessage {
 
     public void setUser(User user) {
         this.user = user;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public String getAiResponse() {
-        return aiResponse;
-    }
-
-    public void setAiResponse(String aiResponse) {
-        this.aiResponse = aiResponse;
     }
 
     public Double getLatitude() {

@@ -14,14 +14,6 @@ CREATE SEQUENCE IF NOT EXISTS favorite_id_seq
     MAXVALUE 9223372036854775807
     CACHE 1;
 
--- Create sequence for chat message IDs if it doesn't exist
-CREATE SEQUENCE IF NOT EXISTS chat_message_id_seq
-    INCREMENT 1
-    START 1
-    MINVALUE 1
-    MAXVALUE 9223372036854775807
-    CACHE 1;
-
 -- Create users table if it doesn't exist
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT NOT NULL DEFAULT nextval('user_id_seq'),
@@ -46,18 +38,5 @@ CREATE TABLE IF NOT EXISTS favorites (
     CONSTRAINT favorites_pkey PRIMARY KEY (id),
     CONSTRAINT favorites_user_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT favorites_unique_user_location UNIQUE (user_id, location_id)
-);
-
--- Create chat_messages table if it doesn't exist
-CREATE TABLE IF NOT EXISTS chat_messages (
-    id BIGINT NOT NULL DEFAULT nextval('chat_message_id_seq'),
-    user_id BIGINT NOT NULL,
-    message TEXT NOT NULL,
-    ai_response TEXT NOT NULL,
-    latitude DOUBLE PRECISION,
-    longitude DOUBLE PRECISION,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chat_messages_pkey PRIMARY KEY (id),
-    CONSTRAINT chat_messages_user_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ); 
 
