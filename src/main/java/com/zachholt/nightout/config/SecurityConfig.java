@@ -21,6 +21,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/users/**").permitAll()
                 .requestMatchers("/api/favorites/**").permitAll()
+                .requestMatchers("/api/chat/**").permitAll()
                 .anyRequest().authenticated()
             );
         
