@@ -1,0 +1,7 @@
+CREATE TABLE chat_messages (
+    id BIGSERIAL PRIMARY KEY,
+    role VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE
+); 
