@@ -4,16 +4,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.ClientResponse;
 
 import com.zachholt.nightout.models.ai.ChatMessage;
 import com.zachholt.nightout.models.ai.ChatRequest;
 import com.zachholt.nightout.models.ai.ChatResponse;
 
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.net.ssl.SSLException;
 
 @Service
 public class AIService {
@@ -24,9 +31,31 @@ public class AIService {
 
     public AIService(@Value("${ai.api.url}") String apiUrl, 
                      @Value("${ai.api.token}") String authToken) {
+        // Configure HTTP client with SSL context that trusts all certificates
+        // WARNING: This should be replaced with proper certificate handling in production
+        HttpClient httpClient;
+        
+        try {
+            // Create an SSL context that trusts all certificates
+            SslContext sslContext = SslContextBuilder.forClient()
+                .trustManager(InsecureTrustManagerFactory.INSTANCE)
+                .build();
+            
+            // Configure HTTP client with the SSL context
+            httpClient = HttpClient.create()
+                .secure(t -> t.sslContext(sslContext));
+                
+        } catch (Exception e) {
+            System.err.println("Error setting up SSL context: " + e.getMessage());
+            e.printStackTrace();
+            // Fallback to non-secure client
+            httpClient = HttpClient.create();
+        }
+        
         this.webClient = WebClient.builder()
                 .baseUrl(apiUrl)
                 .defaultHeader("Authorization", authToken)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
 
@@ -52,28 +81,30 @@ public class AIService {
      * @return A Flux of chat responses for streaming
      */
     public Flux<ChatResponse> chatStream(ChatRequest request) {
-        // Ensure that stream is true
-        request.setStream(true);
-        
         // Set default model if not specified
         if (request.getModel() == null) {
             request.setModel(defaultModel);
         }
         
-        if (request.getStream_options() == null) {
-            request.setStream_options(new ChatRequest.StreamOptions(true));
-        }
-        
+        // These are the exact paths used by the GenAI API
         return webClient.post()
                 .uri("/chat/completions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                    response -> response.bodyToMono(String.class)
+                        .flatMap(error -> {
+                            System.err.println("API Error: " + error);
+                            return Mono.error(new RuntimeException("API Error: " + error));
+                        })
+                )
                 .bodyToFlux(ChatResponse.class)
-                .onErrorResume(e -> {
+                .doOnError(e -> {
                     System.err.println("Error in streaming chat request: " + e.getMessage());
                     e.printStackTrace();
-                    
+                })
+                .onErrorResume(e -> {
                     // Create an error response object
                     ChatResponse errorResponse = new ChatResponse();
                     errorResponse.setId("error");

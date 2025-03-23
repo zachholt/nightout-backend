@@ -20,7 +20,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
-@RequestMapping("/api/ai")
+@RequestMapping("/v2/serve")
 @CrossOrigin
 public class AIController {
 
@@ -50,24 +50,18 @@ public class AIController {
     }
 
     /**
-     * Streaming chat endpoint with full request customization
+     * Chat endpoint that supports both streaming and non-streaming
      * @param request The chat request
-     * @return Streaming chat response
+     * @return Streaming or non-streaming chat response
      */
-    @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ChatResponse> chatStream(@RequestBody ChatRequest request) {
-        // Ensure streaming is enabled
-        request.setStream(true);
-        if (request.getStream_options() == null) {
-            request.setStream_options(new ChatRequest.StreamOptions(true));
-        }
-        
+    @PostMapping(value = "/chat/completions", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ChatResponse> chatCompletions(@RequestBody ChatRequest request) {
         // Add location context if it's not already present
         aiService.addLocationContextToRequest(request);
         
         return aiService.chatStream(request)
                 .onErrorResume(e -> {
-                    System.err.println("Error in chat stream: " + e.getMessage());
+                    System.err.println("Error in chat completions: " + e.getMessage());
                     e.printStackTrace();
                     
                     // Create an error response object
@@ -81,8 +75,7 @@ public class AIController {
     }
 
     /**
-     * Streaming chat endpoint that takes a simple text message and location
-     * This combines the previous contextual and simple functionality
+     * Simple message endpoint (DEPRECATED - keeping for backward compatibility)
      * @param message Text message from user
      * @param location Optional location parameter (defaults to Boston if not provided)
      * @return Streaming chat response
