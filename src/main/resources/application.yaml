@@ -31,9 +31,15 @@ spring:
       continue-on-error: true
   codec:
     max-in-memory-size: 10MB
+  webflux:
+    base-path: /api
 
 server:
   port: 8080
+  connection-timeout: 120s
+  tomcat:
+    max-threads: 200
+    connection-timeout: 120000
 
 ai:
   api:
