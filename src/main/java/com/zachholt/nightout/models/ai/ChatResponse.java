@@ -1,15 +1,26 @@
 package com.zachholt.nightout.models.ai;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.List;
+import java.util.Map;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ChatResponse {
     private String id;
     private String object;
     private long created;
     private String model;
     private String system_fingerprint;
-    private ChatChoices choices;
+    private Object choices; // Can be either a single ChatChoices object or an array
     private ChatUsage usage;
+    @JsonProperty("provider_specific_fields")
+    private Map<String, Object> providerSpecificFields;
+    @JsonProperty("stream_options")
+    private StreamOptions streamOptions;
+    @JsonProperty("service_tier")
+    private String serviceTier;
 
     public ChatResponse() {
     }
@@ -54,11 +65,11 @@ public class ChatResponse {
         this.system_fingerprint = system_fingerprint;
     }
 
-    public ChatChoices getChoices() {
+    public Object getChoices() {
         return choices;
     }
 
-    public void setChoices(ChatChoices choices) {
+    public void setChoices(Object choices) {
         this.choices = choices;
     }
 
@@ -70,73 +81,159 @@ public class ChatResponse {
         this.usage = usage;
     }
 
-    public static class ChatChoices {
-        private int index;
-        private ChatMessage delta;
-        @JsonProperty("finish_reason")
-        private String finishReason;
-
-        public ChatChoices() {
-        }
-
-        public int getIndex() {
-            return index;
-        }
-
-        public void setIndex(int index) {
-            this.index = index;
-        }
-
-        public ChatMessage getDelta() {
-            return delta;
-        }
-
-        public void setDelta(ChatMessage delta) {
-            this.delta = delta;
-        }
-
-        public String getFinishReason() {
-            return finishReason;
-        }
-
-        public void setFinishReason(String finishReason) {
-            this.finishReason = finishReason;
-        }
+    public Map<String, Object> getProviderSpecificFields() {
+        return providerSpecificFields;
     }
 
-    public static class ChatUsage {
-        @JsonProperty("prompt_tokens")
-        private int promptTokens;
-        @JsonProperty("completion_tokens")
-        private int completionTokens;
-        @JsonProperty("total_tokens")
-        private int totalTokens;
+    public void setProviderSpecificFields(Map<String, Object> providerSpecificFields) {
+        this.providerSpecificFields = providerSpecificFields;
+    }
 
-        public ChatUsage() {
+    public StreamOptions getStreamOptions() {
+        return streamOptions;
+    }
+
+    public void setStreamOptions(StreamOptions streamOptions) {
+        this.streamOptions = streamOptions;
+    }
+
+    public String getServiceTier() {
+        return serviceTier;
+    }
+
+    public void setServiceTier(String serviceTier) {
+        this.serviceTier = serviceTier;
+    }
+
+    // Helper methods to extract content
+    public String getContent() {
+        if (choices instanceof List) {
+            List<?> choicesList = (List<?>) choices;
+            if (!choicesList.isEmpty()) {
+                if (choicesList.get(0) instanceof Map) {
+                    Map<?, ?> choice = (Map<?, ?>) choicesList.get(0);
+                    
+                    // For non-streaming response
+                    if (choice.containsKey("message")) {
+                        Map<?, ?> message = (Map<?, ?>) choice.get("message");
+                        if (message != null && message.containsKey("content")) {
+                            return (String) message.get("content");
+                        }
+                    }
+                    
+                    // For streaming response
+                    if (choice.containsKey("delta")) {
+                        Map<?, ?> delta = (Map<?, ?>) choice.get("delta");
+                        if (delta != null && delta.containsKey("content")) {
+                            return (String) delta.get("content");
+                        }
+                    }
+                }
+            }
+        } else if (choices instanceof Map) {
+            Map<?, ?> choicesMap = (Map<?, ?>) choices;
+            
+            // For streaming response with delta
+            if (choicesMap.containsKey("delta")) {
+                Map<?, ?> delta = (Map<?, ?>) choicesMap.get("delta");
+                if (delta != null && delta.containsKey("content")) {
+                    return (String) delta.get("content");
+                }
+            }
+        }
+        return null;
+    }
+
+    public static class StreamOptions {
+        private boolean include_usage;
+
+        public StreamOptions() {
         }
 
-        public int getPromptTokens() {
-            return promptTokens;
+        public boolean isInclude_usage() {
+            return include_usage;
         }
 
-        public void setPromptTokens(int promptTokens) {
-            this.promptTokens = promptTokens;
+        public void setInclude_usage(boolean include_usage) {
+            this.include_usage = include_usage;
         }
+    }
+}
 
-        public int getCompletionTokens() {
-            return completionTokens;
-        }
+// ChatChoices and ChatUsage remain the same but are made more flexible with @JsonIgnoreProperties
+@JsonIgnoreProperties(ignoreUnknown = true)
+class ChatChoices {
+    private int index;
+    private ChatMessage delta; // For streaming format
+    private ChatMessage message; // For non-streaming format
+    private String finish_reason;
 
-        public void setCompletionTokens(int completionTokens) {
-            this.completionTokens = completionTokens;
-        }
+    public ChatChoices() {
+    }
 
-        public int getTotalTokens() {
-            return totalTokens;
-        }
+    public int getIndex() {
+        return index;
+    }
 
-        public void setTotalTokens(int totalTokens) {
-            this.totalTokens = totalTokens;
-        }
+    public void setIndex(int index) {
+        this.index = index;
+    }
+
+    public ChatMessage getDelta() {
+        return delta;
+    }
+
+    public void setDelta(ChatMessage delta) {
+        this.delta = delta;
+    }
+
+    public ChatMessage getMessage() {
+        return message;
+    }
+
+    public void setMessage(ChatMessage message) {
+        this.message = message;
+    }
+
+    public String getFinish_reason() {
+        return finish_reason;
+    }
+
+    public void setFinish_reason(String finish_reason) {
+        this.finish_reason = finish_reason;
+    }
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+class ChatUsage {
+    private int prompt_tokens;
+    private int completion_tokens;
+    private int total_tokens;
+
+    public ChatUsage() {
+    }
+
+    public int getPrompt_tokens() {
+        return prompt_tokens;
+    }
+
+    public void setPrompt_tokens(int prompt_tokens) {
+        this.prompt_tokens = prompt_tokens;
+    }
+
+    public int getCompletion_tokens() {
+        return completion_tokens;
+    }
+
+    public void setCompletion_tokens(int completion_tokens) {
+        this.completion_tokens = completion_tokens;
+    }
+
+    public int getTotal_tokens() {
+        return total_tokens;
+    }
+
+    public void setTotal_tokens(int total_tokens) {
+        this.total_tokens = total_tokens;
     }
 } 

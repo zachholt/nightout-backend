@@ -63,7 +63,12 @@ public class AIService {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()
-                .bodyToMono(String.class);
+                .bodyToMono(String.class)
+                .onErrorResume(e -> {
+                    System.err.println("Error in chat request: " + e.getMessage());
+                    e.printStackTrace();
+                    return Mono.just("Error: " + e.getMessage());
+                });
     }
 
     /**
@@ -92,7 +97,12 @@ public class AIService {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()
-                .bodyToFlux(ChatResponse.class);
+                .bodyToFlux(ChatResponse.class)
+                .onErrorResume(e -> {
+                    System.err.println("Error in streaming chat request: " + e.getMessage());
+                    e.printStackTrace();
+                    return Flux.empty();
+                });
     }
     
     /**
@@ -101,6 +111,11 @@ public class AIService {
      */
     private void addLocationContextToRequest(ChatRequest request) {
         List<ChatMessage> messages = request.getMessages();
+        
+        if (messages == null) {
+            messages = new ArrayList<>();
+            request.setMessages(messages);
+        }
         
         // If there's no system message, add one with location context
         boolean hasSystemMessage = messages.stream()
@@ -113,13 +128,9 @@ public class AIService {
             ChatMessage systemMessage = new ChatMessage(
                 "system", 
                 "You are a helpful assistant for the NightOut application. " + 
-                "When users ask about places, activities, restaurants, or entertainment, " +
-                "you should provide specific recommendations based on their location. " +
-                "Assume the user is currently in Boston, Massachusetts unless they specify otherwise. " +
-                "Give detailed information about the recommended places including address, " +
-                "what's special about them, pricing level, and any other relevant information. " +
-                "If the user mentions a different location, prioritize that information. " +
-                "Your recommendations should be personalized and contextual to their location and preferences."
+                "Provide specific recommendations about Boston, Massachusetts when asked about places, " +
+                "restaurants, events, activities, or nightlife. Include details like addresses, " +
+                "pricing, and why they're recommended."
             );
             
             newMessages.add(systemMessage);
@@ -146,8 +157,7 @@ public class AIService {
             "You are a helpful assistant for the NightOut application. " +
             "Provide specific recommendations about " + locationContext + " when asked about places, " +
             "restaurants, events, activities, or nightlife. Include details like addresses, " +
-            "pricing, and why they're recommended. Be conversational but focused on providing " +
-            "specific, helpful local recommendations."
+            "pricing, and why they're recommended."
         ));
         
         // User message

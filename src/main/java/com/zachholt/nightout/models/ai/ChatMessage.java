@@ -2,6 +2,8 @@ package com.zachholt.nightout.models.ai;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class ChatMessage {
     private String role;
     private List<MessageContent> content;
