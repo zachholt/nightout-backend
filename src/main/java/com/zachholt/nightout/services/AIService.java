@@ -38,34 +38,9 @@ public class AIService {
         return webClient.get()
                 .uri("/models")
                 .retrieve()
-                .bodyToMono(String.class);
-    }
-
-    /**
-     * Send a chat request and get a non-streaming response
-     * @param request The chat request
-     * @return A Mono with the chat response
-     */
-    public Mono<String> chat(ChatRequest request) {
-        // Set stream to false just to be safe
-        request.setStream(false);
-        
-        // Set default model if not specified
-        if (request.getModel() == null) {
-            request.setModel(defaultModel);
-        }
-        
-        // Add location context to the request
-        addLocationContextToRequest(request);
-        
-        return webClient.post()
-                .uri("/chat/completions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
-                .retrieve()
                 .bodyToMono(String.class)
                 .onErrorResume(e -> {
-                    System.err.println("Error in chat request: " + e.getMessage());
+                    System.err.println("Error in models request: " + e.getMessage());
                     e.printStackTrace();
                     return Mono.just("Error: " + e.getMessage());
                 });
@@ -89,9 +64,6 @@ public class AIService {
             request.setStream_options(new ChatRequest.StreamOptions(true));
         }
         
-        // Add location context to the request
-        addLocationContextToRequest(request);
-        
         return webClient.post()
                 .uri("/chat/completions")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -101,7 +73,14 @@ public class AIService {
                 .onErrorResume(e -> {
                     System.err.println("Error in streaming chat request: " + e.getMessage());
                     e.printStackTrace();
-                    return Flux.empty();
+                    
+                    // Create an error response object
+                    ChatResponse errorResponse = new ChatResponse();
+                    errorResponse.setId("error");
+                    errorResponse.setObject("error");
+                    errorResponse.setModel(request.getModel());
+                    
+                    return Flux.just(errorResponse);
                 });
     }
     
@@ -109,7 +88,7 @@ public class AIService {
      * Add location context to chat requests
      * @param request The chat request to enhance with location context
      */
-    private void addLocationContextToRequest(ChatRequest request) {
+    public void addLocationContextToRequest(ChatRequest request) {
         List<ChatMessage> messages = request.getMessages();
         
         if (messages == null) {
@@ -166,14 +145,11 @@ public class AIService {
         // Create request
         ChatRequest request = new ChatRequest();
         request.setModel(defaultModel);
-        request.setStream(stream);
+        request.setStream(true); // Always enable streaming
         request.setTop_p(0.01);
         request.setMessages(messages);
         request.setStop(List.of("\\nUser:", "\\n User:", "User:", "User"));
-        
-        if (stream) {
-            request.setStream_options(new ChatRequest.StreamOptions(true));
-        }
+        request.setStream_options(new ChatRequest.StreamOptions(true));
         
         return request;
     }

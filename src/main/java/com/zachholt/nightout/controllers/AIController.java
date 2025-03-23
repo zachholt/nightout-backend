@@ -50,26 +50,7 @@ public class AIController {
     }
 
     /**
-     * Handle a chat request with non-streaming response
-     * @param request The chat request
-     * @return Chat completion response
-     */
-    @PostMapping("/chat")
-    public Mono<ResponseEntity<String>> chat(@RequestBody ChatRequest request) {
-        // Ensure streaming is disabled
-        request.setStream(false);
-        
-        return aiService.chat(request)
-                .map(response -> ResponseEntity.ok().body(response))
-                .defaultIfEmpty(ResponseEntity.notFound().build())
-                .onErrorResume(e -> {
-                    System.err.println("Error in chat: " + e.getMessage());
-                    return Mono.just(ResponseEntity.status(500).body("Error: " + e.getMessage()));
-                });
-    }
-
-    /**
-     * Handle a chat request with streaming response using Server-Sent Events
+     * Streaming chat endpoint with full request customization
      * @param request The chat request
      * @return Streaming chat response
      */
@@ -80,6 +61,9 @@ public class AIController {
         if (request.getStream_options() == null) {
             request.setStream_options(new ChatRequest.StreamOptions(true));
         }
+        
+        // Add location context if it's not already present
+        aiService.addLocationContextToRequest(request);
         
         return aiService.chatStream(request)
                 .onErrorResume(e -> {
@@ -97,56 +81,23 @@ public class AIController {
     }
 
     /**
-     * Convenience endpoint for simple text messages
+     * Streaming chat endpoint that takes a simple text message and location
+     * This combines the previous contextual and simple functionality
      * @param message Text message from user
      * @param location Optional location parameter (defaults to Boston if not provided)
-     * @return Chat response as String
-     */
-    @PostMapping(value = "/chat/simple")
-    public Mono<ResponseEntity<String>> simpleChat(@RequestBody String message, 
-                                   @RequestParam(required = false) String location) {
-        ChatRequest request = aiService.createContextualRequest(message, location, false);
-        return aiService.chat(request)
-                .map(response -> ResponseEntity.ok().body(response))
-                .onErrorResume(e -> {
-                    System.err.println("Error in simple chat: " + e.getMessage());
-                    return Mono.just(ResponseEntity.status(500)
-                            .body("Error processing your request. Please try again."));
-                });
-    }
-
-    /**
-     * Convenience endpoint for contextual chats (non-streaming)
-     * @param message Text message from user
-     * @param location Optional location parameter
-     * @return Chat response as String
-     */
-    @PostMapping(value = "/chat/contextual")
-    public Mono<ResponseEntity<String>> contextualChat(@RequestBody String message,
-                                      @RequestParam(required = false) String location) {
-        ChatRequest request = aiService.createContextualRequest(message, location, false);
-        return aiService.chat(request)
-                .map(response -> ResponseEntity.ok().body(response))
-                .onErrorResume(e -> {
-                    System.err.println("Error in contextual chat: " + e.getMessage());
-                    return Mono.just(ResponseEntity.status(500)
-                            .body("Error processing your request. Please try again."));
-                });
-    }
-
-    /**
-     * Convenience endpoint for streaming contextual chats
-     * @param message Text message from user
-     * @param location Optional location parameter
      * @return Streaming chat response
      */
-    @PostMapping(value = "/chat/contextual/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ChatResponse> contextualChatStream(@RequestBody String message,
-                                                 @RequestParam(required = false) String location) {
+    @PostMapping(value = "/chat/message/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ChatResponse> messageStream(
+            @RequestBody String message,
+            @RequestParam(required = false) String location) {
+        
+        // Create a contextual request with streaming enabled
         ChatRequest request = aiService.createContextualRequest(message, location, true);
+        
         return aiService.chatStream(request)
                 .onErrorResume(e -> {
-                    System.err.println("Error in contextual chat stream: " + e.getMessage());
+                    System.err.println("Error in message stream: " + e.getMessage());
                     e.printStackTrace();
                     
                     // Create an error response object
