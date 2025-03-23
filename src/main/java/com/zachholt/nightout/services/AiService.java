@@ -30,6 +30,10 @@ public class AiService {
                 .build();
     }
     
+    /**
+     * Stream chat completion from AI API. Returns the raw streaming response as a Flux of strings.
+     * Each string represents a chunk of the stream in SSE format.
+     */
     public Flux<String> streamChatCompletion(List<Map<String, Object>> messages) {
         Map<String, Object> requestBody = Map.of(
             "model", "claude-3-7",
@@ -40,10 +44,11 @@ public class AiService {
             "stop", List.of("\nUser:", "\n User:", "User:", "User")
         );
         
+        // Return the raw text stream directly without transformation
         return webClient.post()
                 .uri("/v2/serve/chat/completions")
                 .body(BodyInserters.fromValue(requestBody))
-                .accept(MediaType.APPLICATION_NDJSON)
+                .accept(MediaType.TEXT_EVENT_STREAM)
                 .retrieve()
                 .bodyToFlux(String.class);
     }

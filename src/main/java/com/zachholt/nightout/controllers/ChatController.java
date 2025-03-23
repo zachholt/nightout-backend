@@ -18,7 +18,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/chat")
-@CrossOrigin
+@CrossOrigin(origins = "*")
 public class ChatController {
 
     private final AiService aiService;
@@ -29,16 +29,16 @@ public class ChatController {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Stream chat endpoint that forwards the Server-Sent Events directly from the AI API
+     */
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ChatMessage> streamChat(@RequestBody ChatRequest chatRequest) {
+    public Flux<String> streamChat(@RequestBody ChatRequest chatRequest) {
         List<Map<String, Object>> messages = convertToAiMessages(chatRequest);
         
+        // Just pass through the raw streaming response directly
         return aiService.streamChatCompletion(messages)
-                .map(this::parseStreamingResponse)
-                .filter(text -> text != null && !text.isEmpty())
-                .scan(new StringBuilder(), (acc, text) -> acc.append(text))
-                .map(sb -> new ChatMessage(sb.toString(), false))
-                .timeout(Duration.ofMinutes(2));
+            .timeout(Duration.ofMinutes(2));
     }
     
     @PostMapping
@@ -95,24 +95,5 @@ public class ChatController {
         messages.add(userMessage);
         
         return messages;
-    }
-    
-    private String parseStreamingResponse(String chunk) {
-        try {
-            Map<String, Object> response = objectMapper.readValue(chunk, Map.class);
-            if (response.containsKey("choices")) {
-                List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
-                if (!choices.isEmpty()) {
-                    Map<String, Object> choice = choices.get(0);
-                    Map<String, Object> delta = (Map<String, Object>) choice.get("delta");
-                    if (delta != null && delta.containsKey("content")) {
-                        return (String) delta.get("content");
-                    }
-                }
-            }
-        } catch (JsonProcessingException e) {
-            // Handle parsing error
-        }
-        return "";
     }
 } 

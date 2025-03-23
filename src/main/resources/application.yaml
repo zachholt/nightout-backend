@@ -29,6 +29,8 @@ spring:
       mode: always
       schema-locations: classpath:schema.sql
       continue-on-error: true
+  codec:
+    max-in-memory-size: 10MB
 
 server:
   port: 8080
