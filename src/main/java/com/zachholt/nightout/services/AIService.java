@@ -5,11 +5,15 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.zachholt.nightout.models.ai.ChatMessage;
 import com.zachholt.nightout.models.ai.ChatRequest;
 import com.zachholt.nightout.models.ai.ChatResponse;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class AIService {
@@ -51,6 +55,9 @@ public class AIService {
             request.setModel(defaultModel);
         }
         
+        // Add location context to the request
+        addLocationContextToRequest(request);
+        
         return webClient.post()
                 .uri("/chat/completions")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -77,11 +84,87 @@ public class AIService {
             request.setStream_options(new ChatRequest.StreamOptions(true));
         }
         
+        // Add location context to the request
+        addLocationContextToRequest(request);
+        
         return webClient.post()
                 .uri("/chat/completions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()
                 .bodyToFlux(ChatResponse.class);
+    }
+    
+    /**
+     * Add location context to chat requests
+     * @param request The chat request to enhance with location context
+     */
+    private void addLocationContextToRequest(ChatRequest request) {
+        List<ChatMessage> messages = request.getMessages();
+        
+        // If there's no system message, add one with location context
+        boolean hasSystemMessage = messages.stream()
+                .anyMatch(msg -> "system".equals(msg.getRole()));
+        
+        if (!hasSystemMessage) {
+            List<ChatMessage> newMessages = new ArrayList<>();
+            
+            // Add system message with location context
+            ChatMessage systemMessage = new ChatMessage(
+                "system", 
+                "You are a helpful assistant for the NightOut application. " + 
+                "When users ask about places, activities, restaurants, or entertainment, " +
+                "you should provide specific recommendations based on their location. " +
+                "Assume the user is currently in Boston, Massachusetts unless they specify otherwise. " +
+                "Give detailed information about the recommended places including address, " +
+                "what's special about them, pricing level, and any other relevant information. " +
+                "If the user mentions a different location, prioritize that information. " +
+                "Your recommendations should be personalized and contextual to their location and preferences."
+            );
+            
+            newMessages.add(systemMessage);
+            newMessages.addAll(messages);
+            request.setMessages(newMessages);
+        }
+    }
+    
+    /**
+     * Create a chat request with location context for a simple message
+     * @param userMessage The user's message
+     * @param location Optional location (defaults to Boston, MA if not provided)
+     * @param stream Whether to enable streaming
+     * @return A prepared chat request with location context
+     */
+    public ChatRequest createContextualRequest(String userMessage, String location, boolean stream) {
+        String locationContext = location != null ? location : "Boston, Massachusetts";
+        
+        List<ChatMessage> messages = new ArrayList<>();
+        
+        // System message with location context
+        messages.add(new ChatMessage(
+            "system", 
+            "You are a helpful assistant for the NightOut application. " +
+            "Provide specific recommendations about " + locationContext + " when asked about places, " +
+            "restaurants, events, activities, or nightlife. Include details like addresses, " +
+            "pricing, and why they're recommended. Be conversational but focused on providing " +
+            "specific, helpful local recommendations."
+        ));
+        
+        // User message
+        messages.add(new ChatMessage("user", userMessage));
+        
+        // Create request
+        ChatRequest request = new ChatRequest();
+        request.setModel(defaultModel);
+        request.setStream(stream);
+        request.setTop_p(0.01);
+        request.setMessages(messages);
+        request.setStop(List.of("\\nUser:", "\\n User:", "User:", "User"));
+        
+        if (stream) {
+            request.setStream_options(new ChatRequest.StreamOptions(true));
+        }
+        
+        return request;
     }
 } 
