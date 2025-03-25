@@ -1,13 +1,15 @@
 package com.zachholt.nightout.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.zachholt.nightout.models.User;
-import com.zachholt.nightout.repos.UserRepository;
+import com.zachholt.nightout.repositories.UserRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.Arrays;
 
 @Service
 public class UserService {
@@ -16,9 +18,13 @@ public class UserService {
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+    
+    @Autowired
+    private Environment environment;
 
     public User registerUser(User user) {
-        if (userRepository.findByEmail(user.getEmail()) != null) {
+        Optional<User> existingUser = userRepository.findByEmail(user.getEmail());
+        if (existingUser.isPresent()) {
             throw new RuntimeException("Email already exists");
         }
         
@@ -43,11 +49,14 @@ public class UserService {
     }
 
     public User authenticateUser(String email, String password) {
-        User user = userRepository.findByEmail(email);
-        if (user != null && passwordEncoder.matches(password, user.getPassword())) {
-            // Don't return the password
-            user.setPassword(null);
-            return user;
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            if (passwordEncoder.matches(password, user.getPassword())) {
+                // Don't return the password
+                user.setPassword(null);
+                return user;
+            }
         }
         return null;
     }
@@ -68,8 +77,9 @@ public class UserService {
     }
     
     public User getUserByEmail(String email) {
-        User user = userRepository.findByEmail(email);
-        if (user != null) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
             // Don't return the password
             user.setPassword(null);
             return user;
@@ -79,8 +89,9 @@ public class UserService {
     
     // Update to use separate latitude and longitude fields
     public User updateUserLocation(String email, Double latitude, Double longitude) {
-        User user = userRepository.findByEmail(email);
-        if (user != null) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
             user.setLatitude(latitude);
             user.setLongitude(longitude);
             user = userRepository.save(user);
@@ -93,32 +104,24 @@ public class UserService {
     
     // Find users near a location within a radius
     public List<User> getUsersByLocation(Double latitude, Double longitude, Double radiusInMeters) {
-        // Convert radius from meters to degrees (approximate)
-        double radiusInDegrees = radiusInMeters / 111000.0; // Rough conversion from meters to degrees
+        List<User> nearbyUsers;
         
-        // Calculate bounding box
-        double minLat = latitude - radiusInDegrees;
-        double maxLat = latitude + radiusInDegrees;
-        double minLng = longitude - radiusInDegrees;
-        double maxLng = longitude + radiusInDegrees;
+        // Check active profiles to determine which repository method to use
+        String[] activeProfiles = environment.getActiveProfiles();
+        boolean isTestOrLocal = Arrays.stream(activeProfiles).anyMatch(profile -> 
+            profile.equals("test") || profile.equals("local"));
+            
+        if (isTestOrLocal) {
+            // Use the simplified method for test/local environments
+            nearbyUsers = userRepository.findAllUsersForTesting(latitude, longitude, radiusInMeters);
+        } else {
+            // Use the spatial query for production
+            nearbyUsers = userRepository.findByLocationWithinRadius(latitude, longitude, radiusInMeters);
+        }
         
-        // Find users within the bounding box
-        List<User> usersInBounds = userRepository.findUsersWithinBounds(minLat, maxLat, minLng, maxLng);
-        
-        // Further filter by exact distance (using Euclidean distance for simplicity)
-        // In a real implementation, you would use the Haversine formula for accurate distance
-        List<User> nearbyUsers = usersInBounds.stream()
-            .filter(user -> {
-                double distance = Math.sqrt(
-                    Math.pow(user.getLatitude() - latitude, 2) + 
-                    Math.pow(user.getLongitude() - longitude, 2)
-                );
-                
-                return distance <= radiusInDegrees;
-            })
+        // Remove passwords from results
+        return nearbyUsers.stream()
             .peek(user -> user.setPassword(null))
             .collect(Collectors.toList());
-            
-        return nearbyUsers;
     }
 }

@@ -4,13 +4,21 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(description = "Represents a single message in a chat conversation")
 public class ChatMessage {
+    @Schema(description = "Unique identifier for the message", example = "550e8400-e29b-41d4-a716-446655440000")
     private String id;
+    
+    @Schema(description = "The content of the message", example = "Hi there! I'm your NightOut assistant.")
     private String text;
+    
+    @Schema(description = "Indicates whether the message is from the user (true) or the AI assistant (false)", example = "false")
     private boolean isUser;
     
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Schema(description = "Timestamp when the message was created", example = "2023-05-15T12:00:00")
     private LocalDateTime timestamp;
 
     public ChatMessage() {

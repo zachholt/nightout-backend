@@ -2,8 +2,8 @@ package com.zachholt.nightout.services;
 
 import com.zachholt.nightout.models.Coordinate;
 import com.zachholt.nightout.models.User;
-import com.zachholt.nightout.repos.CoordinateRepository;
-import com.zachholt.nightout.repos.UserRepository;
+import com.zachholt.nightout.repositories.CoordinateRepository;
+import com.zachholt.nightout.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

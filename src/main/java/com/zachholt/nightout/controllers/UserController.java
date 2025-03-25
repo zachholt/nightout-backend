@@ -6,6 +6,13 @@ import org.springframework.web.bind.annotation.*;
 import com.zachholt.nightout.models.User;
 import com.zachholt.nightout.models.UserResponse;
 import com.zachholt.nightout.services.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -15,13 +22,20 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
+@Tag(name = "Users", description = "User management API")
 public class UserController {
 
     @Autowired
     private UserService userService;
 
+    @Operation(summary = "Get user by ID", description = "Retrieve user information by their ID")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "User found",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))),
+        @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+    public ResponseEntity<?> getUserById(@Parameter(description = "User ID") @PathVariable Long id) {
         User user = userService.getUserById(id);
         if (user != null) {
             return ResponseEntity.ok(new UserResponse(
@@ -37,8 +51,15 @@ public class UserController {
         return ResponseEntity.notFound().build();
     }
     
+    @Operation(summary = "Get current user", description = "Retrieve current user information by email")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "User found",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))),
+        @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(@RequestParam String email) {
+    public ResponseEntity<?> getCurrentUser(
+        @Parameter(description = "User email") @RequestParam String email) {
         User user = userService.getUserByEmail(email);
         if (user != null) {
             return ResponseEntity.ok(new UserResponse(
@@ -54,12 +75,19 @@ public class UserController {
         return ResponseEntity.notFound().build();
     }
     
+    @Operation(summary = "Check in user", description = "Update user's location when checking in at a venue")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Check-in successful",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid check-in data"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PostMapping("/checkin")
     public ResponseEntity<?> checkIn(
-        @RequestParam String email, 
-        @RequestParam(required = false) Double latitude,
-        @RequestParam(required = false) Double longitude,
-        @RequestBody(required = false) Map<String, Object> requestBody) {
+        @Parameter(description = "User email") @RequestParam String email,
+        @Parameter(description = "Latitude coordinate") @RequestParam(required = false) Double latitude,
+        @Parameter(description = "Longitude coordinate") @RequestParam(required = false) Double longitude,
+        @Parameter(description = "Additional check-in data") @RequestBody(required = false) Map<String, Object> requestBody) {
         
         System.out.println("Check-in request received for email: " + email);
         System.out.println("Request parameters - latitude: " + latitude + ", longitude: " + longitude);
@@ -137,8 +165,16 @@ public class UserController {
         }
     }
     
+    @Operation(summary = "Check out user", description = "Clear user's location when checking out")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Check-out successful",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))),
+        @ApiResponse(responseCode = "400", description = "User not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PostMapping("/checkout")
-    public ResponseEntity<?> checkOut(@RequestParam String email) {
+    public ResponseEntity<?> checkOut(
+        @Parameter(description = "User email") @RequestParam String email) {
         System.out.println("Check-out request received for email: " + email);
         
         try {
@@ -165,11 +201,18 @@ public class UserController {
         }
     }
     
+    @Operation(summary = "Find users by location", 
+              description = "Find users within a specified radius of given coordinates")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Users found",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid coordinates")
+    })
     @GetMapping("/by-coordinates")
     public ResponseEntity<?> getUsersByLocation(
-        @RequestParam Double latitude,
-        @RequestParam Double longitude,
-        @RequestParam(required = false, defaultValue = "500") Double radiusInMeters) {
+        @Parameter(description = "Latitude coordinate") @RequestParam Double latitude,
+        @Parameter(description = "Longitude coordinate") @RequestParam Double longitude,
+        @Parameter(description = "Search radius in meters") @RequestParam(required = false, defaultValue = "500") Double radiusInMeters) {
         
         List<User> users = userService.getUsersByLocation(latitude, longitude, radiusInMeters);
         List<UserResponse> userResponses = users.stream()

@@ -1,4 +1,4 @@
-package com.zachholt.nightout.repos;
+package com.zachholt.nightout.repositories;
 
 import com.zachholt.nightout.models.Coordinate;
 import org.springframework.data.jpa.repository.JpaRepository;

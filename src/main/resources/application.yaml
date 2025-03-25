@@ -41,6 +41,17 @@ server:
     max-threads: 200
     connection-timeout: 120000
 
+# Swagger/OpenAPI configuration
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /api-docs
+  show-actuator: false
+  packages-to-scan: com.zachholt.nightout.controllers
+
 ai:
   api:
     url: https://lisa-rest-2067001295.us-east-1.elb.amazonaws.com

@@ -32,12 +32,27 @@ jobs:
         with:
           distribution: "temurin"
           java-version: "17"
+          cache: 'maven'
       - name: Build and Test
-        run: mvn clean package
+        run: mvn clean verify
         env:
+          SPRING_PROFILES_ACTIVE: test
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/nightoutdb_test
           SPRING_DATASOURCE_USERNAME: postgres
           SPRING_DATASOURCE_PASSWORD: postgres
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: |
+            **/target/surefire-reports/**
+            **/target/site/jacoco/**
+      - name: Check Test Coverage
+        run: |
+          echo "Checking test coverage..."
+          COVERAGE=$(mvn jacoco:report | grep -A 1 "Line coverage" | tail -n 1 | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          echo "Line coverage: $COVERAGE"
       - name: Docker Login
         run: |
           docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}

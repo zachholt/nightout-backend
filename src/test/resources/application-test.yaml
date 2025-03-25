@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: NightoutAPI-Test
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    defer-datasource-initialization: true
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+  codec:
+    max-in-memory-size: 10MB
+  sql:
+    init:
+      mode: embedded
+
+server:
+  port: 0  # Random port for testing
+  connection-timeout: 5s
+
+ai:
+  api:
+    url: http://localhost:8080/mock-ai
+    token: test_token 

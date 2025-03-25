@@ -5,8 +5,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.zachholt.nightout.models.Favorite;
 import com.zachholt.nightout.models.User;
-import com.zachholt.nightout.repos.FavoriteRepository;
-import com.zachholt.nightout.repos.UserRepository;
+import com.zachholt.nightout.repositories.FavoriteRepository;
+import com.zachholt.nightout.repositories.UserRepository;
 
 import java.util.List;
 

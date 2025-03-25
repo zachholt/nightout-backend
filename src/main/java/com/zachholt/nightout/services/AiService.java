@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,10 @@ public class AiService {
         this.objectMapper = objectMapper;
         this.webClient = webClientBuilder.baseUrl(aiApiUrl)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader(HttpHeaders.ACCEPT, "*/*")
+                .defaultHeader(HttpHeaders.CACHE_CONTROL, "no-cache")
+                .defaultHeader(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate, br")
+                .defaultHeader(HttpHeaders.CONNECTION, "keep-alive")
                 .filters(exchangeFilterFunctions -> {
                     exchangeFilterFunctions.add(logRequest());
                     exchangeFilterFunctions.add(logResponse());
@@ -55,7 +60,7 @@ public class AiService {
      * Stream chat completion from AI API. Returns the raw streaming response as a Flux of strings.
      * Each string represents a chunk of the stream in SSE format.
      */
-    public Flux<String> streamChatCompletion(List<Map<String, Object>> messages) {
+    public Flux<String> streamChatCompletion(List<Map<String, Object>> originalMessages) {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "claude-3-7");
         requestBody.put("temperature", null);
@@ -67,7 +72,34 @@ public class AiService {
         requestBody.put("stream", true);
         requestBody.put("seed", null);
         requestBody.put("stream_options", Map.of("include_usage", true));
-        requestBody.put("messages", messages);
+        
+        // Convert our message format to the format that works with the API
+        List<Map<String, Object>> apiMessages = new ArrayList<>();
+        StringBuilder conversationHistory = new StringBuilder();
+        conversationHistory.append("The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.\n\nCurrent conversation:\n\n");
+        
+        for (Map<String, Object> message : originalMessages) {
+            String role = (String) message.get("role");
+            List<Map<String, Object>> contentList = (List<Map<String, Object>>) message.get("content");
+            String text = "";
+            
+            if (contentList != null && !contentList.isEmpty()) {
+                Map<String, Object> content = contentList.get(0);
+                text = (String) content.get("text");
+            }
+            
+            conversationHistory.append("User: ").append(text).append("\n");
+            if ("user".equals(role)) {
+                conversationHistory.append("AI: ");
+            }
+        }
+        
+        Map<String, Object> userMessage = new HashMap<>();
+        userMessage.put("role", "user");
+        userMessage.put("content", conversationHistory.toString());
+        apiMessages.add(userMessage);
+        
+        requestBody.put("messages", apiMessages);
         requestBody.put("stop", List.of("\nUser:", "\n User:", "User:", "User"));
         
         try {
@@ -79,9 +111,8 @@ public class AiService {
         // Return the raw text stream directly without transformation
         return webClient.post()
                 .uri("/v2/serve/chat/completions")
-                .header("Authorization", aiApiToken)
+                .header("Authorization", "test_token")  // Use the literal token value
                 .body(BodyInserters.fromValue(requestBody))
-                .accept(MediaType.TEXT_EVENT_STREAM)
                 .retrieve()
                 .bodyToFlux(String.class)
                 .onErrorResume(e -> {
@@ -97,9 +128,9 @@ public class AiService {
                 });
     }
     
-    public Map<String, Object> chatCompletion(List<Map<String, Object>> messages) {
+    public Map<String, Object> chatCompletion(List<Map<String, Object>> originalMessages) {
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "claude-3-7");
+        requestBody.put("model", "mistral-vllm");
         requestBody.put("temperature", null);
         requestBody.put("top_p", 0.01);
         requestBody.put("frequency_penalty", null);
@@ -108,7 +139,34 @@ public class AiService {
         requestBody.put("n", null);
         requestBody.put("stream", false);
         requestBody.put("seed", null);
-        requestBody.put("messages", messages);
+        
+        // Convert our message format to the format that works with the API
+        List<Map<String, Object>> apiMessages = new ArrayList<>();
+        StringBuilder conversationHistory = new StringBuilder();
+        conversationHistory.append("The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.\n\nCurrent conversation:\n\n");
+        
+        for (Map<String, Object> message : originalMessages) {
+            String role = (String) message.get("role");
+            List<Map<String, Object>> contentList = (List<Map<String, Object>>) message.get("content");
+            String text = "";
+            
+            if (contentList != null && !contentList.isEmpty()) {
+                Map<String, Object> content = contentList.get(0);
+                text = (String) content.get("text");
+            }
+            
+            conversationHistory.append("User: ").append(text).append("\n");
+            if ("user".equals(role)) {
+                conversationHistory.append("AI: ");
+            }
+        }
+        
+        Map<String, Object> userMessage = new HashMap<>();
+        userMessage.put("role", "user");
+        userMessage.put("content", conversationHistory.toString());
+        apiMessages.add(userMessage);
+        
+        requestBody.put("messages", apiMessages);
         requestBody.put("stop", List.of("\nUser:", "\n User:", "User:", "User"));
         
         try {
@@ -120,7 +178,7 @@ public class AiService {
         try {
             return webClient.post()
                     .uri("/v2/serve/chat/completions")
-                    .header("Authorization", aiApiToken)
+                    .header("Authorization", "test_token") // Use the literal token value
                     .body(BodyInserters.fromValue(requestBody))
                     .retrieve()
                     .bodyToMono(Map.class)

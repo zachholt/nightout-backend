@@ -10,38 +10,48 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity(name = "users")
+@Schema(description = "Represents a user in the system")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_id_seq")
     @SequenceGenerator(name = "user_id_seq", sequenceName = "user_id_seq", allocationSize = 1)
     @Column(name = "id", nullable = false)
+    @Schema(description = "Unique identifier for the user", example = "1")
     private Long id;
 
     @Column(name = "name", nullable = false)
+    @Schema(description = "User's full name", example = "John Doe")
     private String name;
 
     @Column(name = "email", unique = true, nullable = false)
     @Email(message = "Invalid email address")
     @NotBlank(message = "Email is required")
+    @Schema(description = "User's email address", example = "john.doe@example.com")
     private String email;
 
     @Column(name = "password", nullable = false)
     @NotBlank(message = "Password is required")
+    @Schema(description = "User's password (hashed)", example = "********")
     private String password;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
+    @Schema(description = "Timestamp when the user account was created", example = "2024-03-15T10:30:00")
     private LocalDateTime createdAt;
 
     @Column(name = "profile_image")
+    @Schema(description = "URL of the user's profile image", example = "https://example.com/profile.jpg")
     private String profileImage = "https://example.com/default-profile.jpg";
 
     @Column(name = "latitude")
+    @Schema(description = "User's current latitude coordinate", example = "40.7128")
     private Double latitude;
 
     @Column(name = "longitude")
+    @Schema(description = "User's current longitude coordinate", example = "-74.0060")
     private Double longitude;
 
     public Long getId() {
