@@ -1,0 +1,362 @@
+{
+  "info": {
+    "name": "NightOut API",
+    "description": "API collection for the NightOut application",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "description": "Authentication management API",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Authenticate user with email and password"
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john.doe@example.com\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Create a new user account"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "End user session"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "User management API",
+      "item": [
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "User ID"
+                }
+              ]
+            },
+            "description": "Retrieve user information by their ID"
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me?email=user@example.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "user@example.com",
+                  "description": "User email"
+                }
+              ]
+            },
+            "description": "Retrieve current user information by email"
+          }
+        },
+        {
+          "name": "Check In",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/checkin?email=user@example.com&latitude=40.7128&longitude=-74.0060",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "checkin"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "user@example.com",
+                  "description": "User email"
+                },
+                {
+                  "key": "latitude",
+                  "value": "40.7128",
+                  "description": "Latitude coordinate"
+                },
+                {
+                  "key": "longitude",
+                  "value": "-74.0060",
+                  "description": "Longitude coordinate"
+                }
+              ]
+            },
+            "description": "Update user's location when checking in at a venue"
+          }
+        },
+        {
+          "name": "Check Out",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/checkout?email=user@example.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "checkout"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "user@example.com",
+                  "description": "User email"
+                }
+              ]
+            },
+            "description": "Clear user's location when checking out"
+          }
+        },
+        {
+          "name": "Find Users by Location",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/by-coordinates?latitude=40.7128&longitude=-74.0060&radiusInMeters=500",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "by-coordinates"],
+              "query": [
+                {
+                  "key": "latitude",
+                  "value": "40.7128",
+                  "description": "Latitude coordinate"
+                },
+                {
+                  "key": "longitude",
+                  "value": "-74.0060",
+                  "description": "Longitude coordinate"
+                },
+                {
+                  "key": "radiusInMeters",
+                  "value": "500",
+                  "description": "Search radius in meters"
+                }
+              ]
+            },
+            "description": "Find users within a specified radius of given coordinates"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Favorites",
+      "description": "Favorite venues management API",
+      "item": [
+        {
+          "name": "Get User's Favorites",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/favorites/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favorites", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "1",
+                  "description": "ID of the user"
+                }
+              ]
+            },
+            "description": "Retrieve all favorite venues for a user"
+          }
+        },
+        {
+          "name": "Add Favorite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"locationId\": \"venue123\",\n    \"name\": \"Cool Bar\",\n    \"address\": \"123 Main St\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/favorites?userId=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favorites"],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "1",
+                  "description": "ID of the user"
+                }
+              ]
+            },
+            "description": "Add a new venue to user's favorites"
+          }
+        },
+        {
+          "name": "Remove Favorite",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/favorites/:userId/:locationId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favorites", ":userId", ":locationId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "1",
+                  "description": "ID of the user"
+                },
+                {
+                  "key": "locationId",
+                  "value": "venue123",
+                  "description": "ID of the location"
+                }
+              ]
+            },
+            "description": "Remove a venue from user's favorites"
+          }
+        },
+        {
+          "name": "Check if Venue is Favorite",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/favorites/:userId/check/:locationId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "favorites", ":userId", "check", ":locationId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "1",
+                  "description": "ID of the user"
+                },
+                {
+                  "key": "locationId",
+                  "value": "venue123",
+                  "description": "ID of the location"
+                }
+              ]
+            },
+            "description": "Check if a venue is in user's favorites"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "description": "Chat API with NightOut AI assistant",
+      "item": [
+        {
+          "name": "Stream Chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"messages\": [\n        {\n            \"role\": \"user\",\n            \"content\": \"Hello, can you help me find a good bar?\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/stream",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "stream"]
+            },
+            "description": "Get streaming response from AI assistant (Server-Sent Events)"
+          }
+        },
+        {
+          "name": "Chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"messages\": [\n        {\n            \"role\": \"user\",\n            \"content\": \"Hello, can you help me find a good bar?\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat"]
+            },
+            "description": "Get a single response from AI assistant"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://44.203.161.109:8080",
+      "type": "string",
+      "description": "Base URL for the API"
+    }
+  ]
+} 

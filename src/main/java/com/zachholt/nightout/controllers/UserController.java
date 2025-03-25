@@ -202,19 +202,19 @@ public class UserController {
     }
     
     @Operation(summary = "Find users by location", 
-              description = "Find users within a specified radius of given coordinates")
+              description = "Find users with location coordinates set")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Users found",
                     content = @Content(schema = @Schema(implementation = UserResponse.class))),
         @ApiResponse(responseCode = "400", description = "Invalid coordinates")
     })
     @GetMapping("/by-coordinates")
+    @CrossOrigin(origins = "*")
     public ResponseEntity<?> getUsersByLocation(
         @Parameter(description = "Latitude coordinate") @RequestParam Double latitude,
-        @Parameter(description = "Longitude coordinate") @RequestParam Double longitude,
-        @Parameter(description = "Search radius in meters") @RequestParam(required = false, defaultValue = "500") Double radiusInMeters) {
+        @Parameter(description = "Longitude coordinate") @RequestParam Double longitude) {
         
-        List<User> users = userService.getUsersByLocation(latitude, longitude, radiusInMeters);
+        List<User> users = userService.getUsersByLocation(latitude, longitude, null);
         List<UserResponse> userResponses = users.stream()
             .map(user -> new UserResponse(
                 user.getId(),

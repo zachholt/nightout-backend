@@ -104,24 +104,9 @@ public class UserService {
     
     // Find users near a location within a radius
     public List<User> getUsersByLocation(Double latitude, Double longitude, Double radiusInMeters) {
-        List<User> nearbyUsers;
-        
-        // Check active profiles to determine which repository method to use
-        String[] activeProfiles = environment.getActiveProfiles();
-        boolean isTestOrLocal = Arrays.stream(activeProfiles).anyMatch(profile -> 
-            profile.equals("test") || profile.equals("local"));
-            
-        if (isTestOrLocal) {
-            // Use the simplified method for test/local environments
-            nearbyUsers = userRepository.findAllUsersForTesting(latitude, longitude, radiusInMeters);
-        } else {
-            // Use the spatial query for production
-            nearbyUsers = userRepository.findByLocationWithinRadius(latitude, longitude, radiusInMeters);
-        }
-        
-        // Remove passwords from results
-        return nearbyUsers.stream()
-            .peek(user -> user.setPassword(null))
+        // Get all users with coordinates set using the new repository method
+        return userRepository.findByCoordinates().stream()
+            .peek(user -> user.setPassword(null))  // Don't return passwords
             .collect(Collectors.toList());
     }
 }
