@@ -158,12 +158,11 @@ public class UserControllerTest {
     void getUsersByLocation_WhenUsersFound_ReturnsUserList() {
         Double latitude = 40.7128;
         Double longitude = -74.0060;
-        Double radius = 500.0;
         List<User> users = Arrays.asList(testUser);
 
-        when(userService.getUsersByLocation(latitude, longitude, radius)).thenReturn(users);
+        when(userService.getUsersByLocation(latitude, longitude, null)).thenReturn(users);
 
-        ResponseEntity<?> response = userController.getUsersByLocation(latitude, longitude, radius);
+        ResponseEntity<?> response = userController.getUsersByLocation(latitude, longitude);
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertNotNull(response.getBody());

@@ -174,18 +174,16 @@ public class UserServiceTest {
     void getUsersByLocation_ReturnsNearbyUsers() {
         Double latitude = 40.7128;
         Double longitude = -74.0060;
-        Double radius = 500.0;
         
-        // Mock environment to return test profile
-        when(environment.getActiveProfiles()).thenReturn(new String[]{"test"});
-        when(userRepository.findAllUsersForTesting(latitude, longitude, radius))
+        when(userRepository.findByCoordinates())
             .thenReturn(Arrays.asList(testUser));
 
-        List<User> results = userService.getUsersByLocation(latitude, longitude, radius);
+        List<User> results = userService.getUsersByLocation(latitude, longitude, null);
 
         assertNotNull(results);
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
         assertEquals(testUser.getId(), results.get(0).getId());
+        assertNull(results.get(0).getPassword(), "Password should be null in response");
     }
 } 
