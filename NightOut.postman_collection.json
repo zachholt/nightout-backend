@@ -316,7 +316,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"messages\": [\n        {\n            \"role\": \"user\",\n            \"content\": \"Hello, can you help me find a good bar?\"\n        }\n    ]\n}"
+              "raw": "{\n    \"userMessage\": \"Hello, can you help me find a good bar?\",\n    \"history\": [\n        {\n            \"id\": \"1\",\n            \"text\": \"Hi there! I'm your NightOut assistant. How can I help you plan your night out today?\",\n            \"isUser\": false,\n            \"timestamp\": \"2023-05-15T12:00:00\"\n        }\n    ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/chat/stream",
@@ -338,7 +338,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"messages\": [\n        {\n            \"role\": \"user\",\n            \"content\": \"Hello, can you help me find a good bar?\"\n        }\n    ]\n}"
+              "raw": "{\n    \"userMessage\": \"Hello, can you help me find a good bar?\",\n    \"history\": [\n        {\n            \"id\": \"1\",\n            \"text\": \"Hi there! I'm your NightOut assistant. How can I help you plan your night out today?\",\n            \"isUser\": false,\n            \"timestamp\": \"2023-05-15T12:00:00\"\n        }\n    ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/chat",

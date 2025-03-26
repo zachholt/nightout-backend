@@ -60,9 +60,9 @@ public class AiService {
      * Stream chat completion from AI API. Returns the raw streaming response as a Flux of strings.
      * Each string represents a chunk of the stream in SSE format.
      */
-    public Flux<String> streamChatCompletion(List<Map<String, Object>> originalMessages) {
+    public Flux<String> streamChatCompletion(List<Map<String, Object>> messages) {
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "claude-3-7");
+        requestBody.put("model", "mistral-vllm");
         requestBody.put("temperature", null);
         requestBody.put("top_p", 0.01);
         requestBody.put("frequency_penalty", null);
@@ -73,33 +73,19 @@ public class AiService {
         requestBody.put("seed", null);
         requestBody.put("stream_options", Map.of("include_usage", true));
         
-        // Convert our message format to the format that works with the API
-        List<Map<String, Object>> apiMessages = new ArrayList<>();
-        StringBuilder conversationHistory = new StringBuilder();
-        conversationHistory.append("The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.\n\nCurrent conversation:\n\n");
+        // Format messages for the AI API
+        List<Map<String, Object>> formattedMessages = new ArrayList<>();
+        Map<String, Object> systemMessage = new HashMap<>();
+        systemMessage.put("role", "system");
+        systemMessage.put("content", "You are the NightOut AI assistant, designed to help users find bars, restaurants, and entertainment venues. " +
+                           "You provide friendly, concise, and helpful information about nightlife options. " +
+                           "If asked about locations, always suggest specific places with details when possible.");
+        formattedMessages.add(systemMessage);
         
-        for (Map<String, Object> message : originalMessages) {
-            String role = (String) message.get("role");
-            List<Map<String, Object>> contentList = (List<Map<String, Object>>) message.get("content");
-            String text = "";
-            
-            if (contentList != null && !contentList.isEmpty()) {
-                Map<String, Object> content = contentList.get(0);
-                text = (String) content.get("text");
-            }
-            
-            conversationHistory.append("User: ").append(text).append("\n");
-            if ("user".equals(role)) {
-                conversationHistory.append("AI: ");
-            }
-        }
+        // Add the user messages
+        formattedMessages.addAll(formatMessages(messages));
         
-        Map<String, Object> userMessage = new HashMap<>();
-        userMessage.put("role", "user");
-        userMessage.put("content", conversationHistory.toString());
-        apiMessages.add(userMessage);
-        
-        requestBody.put("messages", apiMessages);
+        requestBody.put("messages", formattedMessages);
         requestBody.put("stop", List.of("\nUser:", "\n User:", "User:", "User"));
         
         try {
@@ -111,7 +97,7 @@ public class AiService {
         // Return the raw text stream directly without transformation
         return webClient.post()
                 .uri("/v2/serve/chat/completions")
-                .header("Authorization", "test_token")  // Use the literal token value
+                .header("Authorization", "test_token")  // Use the token from configuration
                 .body(BodyInserters.fromValue(requestBody))
                 .retrieve()
                 .bodyToFlux(String.class)
@@ -128,7 +114,7 @@ public class AiService {
                 });
     }
     
-    public Map<String, Object> chatCompletion(List<Map<String, Object>> originalMessages) {
+    public Map<String, Object> chatCompletion(List<Map<String, Object>> messages) {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "mistral-vllm");
         requestBody.put("temperature", null);
@@ -140,33 +126,19 @@ public class AiService {
         requestBody.put("stream", false);
         requestBody.put("seed", null);
         
-        // Convert our message format to the format that works with the API
-        List<Map<String, Object>> apiMessages = new ArrayList<>();
-        StringBuilder conversationHistory = new StringBuilder();
-        conversationHistory.append("The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know.\n\nCurrent conversation:\n\n");
+        // Format messages for the AI API
+        List<Map<String, Object>> formattedMessages = new ArrayList<>();
+        Map<String, Object> systemMessage = new HashMap<>();
+        systemMessage.put("role", "system");
+        systemMessage.put("content", "You are the NightOut AI assistant, designed to help users find bars, restaurants, and entertainment venues. " +
+                           "You provide friendly, concise, and helpful information about nightlife options. " +
+                           "If asked about locations, always suggest specific places with details when possible.");
+        formattedMessages.add(systemMessage);
         
-        for (Map<String, Object> message : originalMessages) {
-            String role = (String) message.get("role");
-            List<Map<String, Object>> contentList = (List<Map<String, Object>>) message.get("content");
-            String text = "";
-            
-            if (contentList != null && !contentList.isEmpty()) {
-                Map<String, Object> content = contentList.get(0);
-                text = (String) content.get("text");
-            }
-            
-            conversationHistory.append("User: ").append(text).append("\n");
-            if ("user".equals(role)) {
-                conversationHistory.append("AI: ");
-            }
-        }
+        // Add the user messages
+        formattedMessages.addAll(formatMessages(messages));
         
-        Map<String, Object> userMessage = new HashMap<>();
-        userMessage.put("role", "user");
-        userMessage.put("content", conversationHistory.toString());
-        apiMessages.add(userMessage);
-        
-        requestBody.put("messages", apiMessages);
+        requestBody.put("messages", formattedMessages);
         requestBody.put("stop", List.of("\nUser:", "\n User:", "User:", "User"));
         
         try {
@@ -178,7 +150,7 @@ public class AiService {
         try {
             return webClient.post()
                     .uri("/v2/serve/chat/completions")
-                    .header("Authorization", "test_token") // Use the literal token value
+                    .header("Authorization", "test_token") // Use the token from configuration
                     .body(BodyInserters.fromValue(requestBody))
                     .retrieve()
                     .bodyToMono(Map.class)
@@ -189,6 +161,41 @@ public class AiService {
                     e.getResponseBodyAsString());
             throw e;
         }
+    }
+    
+    /**
+     * Helper method to format messages for the AI API
+     */
+    private List<Map<String, Object>> formatMessages(List<Map<String, Object>> originalMessages) {
+        List<Map<String, Object>> formattedMessages = new ArrayList<>();
+        
+        for (Map<String, Object> message : originalMessages) {
+            String role = (String) message.get("role");
+            
+            // Handle different message formats
+            Object contentObj = message.get("content");
+            String textContent = "";
+            
+            if (contentObj instanceof List) {
+                // Handle structured content format (with type and text)
+                List<Map<String, Object>> contentList = (List<Map<String, Object>>) contentObj;
+                if (contentList != null && !contentList.isEmpty()) {
+                    Map<String, Object> content = contentList.get(0);
+                    textContent = (String) content.get("text");
+                }
+            } else if (contentObj instanceof String) {
+                // Handle simple string content
+                textContent = (String) contentObj;
+            }
+            
+            // Add formatted message
+            Map<String, Object> formattedMessage = new HashMap<>();
+            formattedMessage.put("role", role);
+            formattedMessage.put("content", textContent);
+            formattedMessages.add(formattedMessage);
+        }
+        
+        return formattedMessages;
     }
     
     private ExchangeFilterFunction logRequest() {

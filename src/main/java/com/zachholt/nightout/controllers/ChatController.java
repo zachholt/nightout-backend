@@ -1,6 +1,5 @@
 package com.zachholt.nightout.controllers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zachholt.nightout.models.ChatMessage;
 import com.zachholt.nightout.models.ChatRequest;
@@ -22,6 +21,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -29,6 +30,7 @@ import java.util.Map;
 @Tag(name = "Chat", description = "Chat API with NightOut AI assistant")
 public class ChatController {
 
+    private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
     private final AiService aiService;
     private final ObjectMapper objectMapper;
 
@@ -41,9 +43,8 @@ public class ChatController {
      * Stream chat endpoint that forwards the Server-Sent Events directly from the AI API
      */
     @Operation(
-        summary = "* Stream chat with AI assistant",
-        description = "Get streaming response from AI assistant (Server-Sent Events). " +
-                     "* This endpoint is currently experiencing issues."
+        summary = "Stream chat with AI assistant",
+        description = "Get streaming response from AI assistant (Server-Sent Events)"
     )
     @ApiResponses({
         @ApiResponse(
@@ -57,6 +58,7 @@ public class ChatController {
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> streamChat(@RequestBody ChatRequest chatRequest) {
         List<Map<String, Object>> messages = convertToAiMessages(chatRequest);
+        logger.info("Processing stream chat request with message: {}", chatRequest.getUserMessage());
         
         // Just pass through the raw streaming response directly
         return aiService.streamChatCompletion(messages)
@@ -64,9 +66,8 @@ public class ChatController {
     }
     
     @Operation(
-        summary = "* Chat with AI assistant",
-        description = "Get a single response from AI assistant. " +
-                     "* This endpoint is currently experiencing issues."
+        summary = "Chat with AI assistant",
+        description = "Get a single response from AI assistant"
     )
     @ApiResponses({
         @ApiResponse(
@@ -80,6 +81,8 @@ public class ChatController {
     @PostMapping
     public ChatMessage chat(@RequestBody ChatRequest chatRequest) {
         List<Map<String, Object>> messages = convertToAiMessages(chatRequest);
+        logger.info("Processing chat request with message: {}", chatRequest.getUserMessage());
+        
         Map<String, Object> response = aiService.chatCompletion(messages);
         
         if (response != null && response.containsKey("choices")) {
@@ -105,14 +108,7 @@ public class ChatController {
             for (ChatMessage message : chatRequest.getHistory()) {
                 Map<String, Object> aiMessage = new HashMap<>();
                 aiMessage.put("role", message.isUser() ? "user" : "assistant");
-                
-                List<Map<String, Object>> content = new ArrayList<>();
-                Map<String, Object> textContent = new HashMap<>();
-                textContent.put("type", "text");
-                textContent.put("text", message.getText());
-                content.add(textContent);
-                
-                aiMessage.put("content", content);
+                aiMessage.put("content", message.getText());
                 messages.add(aiMessage);
             }
         }
@@ -120,14 +116,7 @@ public class ChatController {
         // Add current user message
         Map<String, Object> userMessage = new HashMap<>();
         userMessage.put("role", "user");
-        
-        List<Map<String, Object>> content = new ArrayList<>();
-        Map<String, Object> textContent = new HashMap<>();
-        textContent.put("type", "text");
-        textContent.put("text", chatRequest.getUserMessage());
-        content.add(textContent);
-        
-        userMessage.put("content", content);
+        userMessage.put("content", chatRequest.getUserMessage());
         messages.add(userMessage);
         
         return messages;

@@ -1,0 +1,120 @@
+{
+	"info": {
+		"_postman_id": "da4ca99c-b0ba-4403-9662-404e01327dd2",
+		"name": "GenAI",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "33098884"
+	},
+	"item": [
+		{
+			"name": "Streaming Chat",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "test_token",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"model\": \"mistral-vllm\",\n    \"temperature\": null,\n    \"top_p\": 0.01,\n    \"frequency_penalty\": null,\n    \"presence_penalty\": null,\n    \"max_tokens\": null,\n    \"n\": null,\n    \"stop\": [\n        \"\\nUser:\",\n        \"\\n User:\",\n        \"User:\",\n        \"User\"\n    ],\n    \"stream\": true,\n    \"seed\": null,\n    \"stream_options\": {\n        \"include_usage\": true\n    },\n    \"messages\": [\n        {\n            \"role\": \"system\",\n            \"content\": \"You are the NightOut AI assistant, designed to help users find bars, restaurants, and entertainment venues. You provide friendly, concise, and helpful information about nightlife options. If asked about locations, always suggest specific places with details when possible.\"\n        },\n        {\n            \"role\": \"user\",\n            \"content\": \"What are some good bars in Boston?\"\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://lisa-rest-2067001295.us-east-1.elb.amazonaws.com/v2/serve/chat/completions",
+					"protocol": "https",
+					"host": [
+						"lisa-rest-2067001295",
+						"us-east-1",
+						"elb",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"v2",
+						"serve",
+						"chat",
+						"completions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "List Models",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "test_token",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://lisa-rest-2067001295.us-east-1.elb.amazonaws.com/v2/serve/models",
+					"protocol": "https",
+					"host": [
+						"lisa-rest-2067001295",
+						"us-east-1",
+						"elb",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"v2",
+						"serve",
+						"models"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Non-Streaming Chat",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "test_token",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"model\": \"mistral-vllm\",\n    \"temperature\": null,\n    \"top_p\": 0.01,\n    \"frequency_penalty\": null,\n    \"presence_penalty\": null,\n    \"max_tokens\": null,\n    \"n\": null,\n    \"stop\": [\n        \"\\nUser:\",\n        \"\\n User:\",\n        \"User:\",\n        \"User\"\n    ],\n    \"stream\": false,\n    \"seed\": null,\n    \"messages\": [\n        {\n            \"role\": \"system\",\n            \"content\": \"You are the NightOut AI assistant, designed to help users find bars, restaurants, and entertainment venues. You provide friendly, concise, and helpful information about nightlife options. If asked about locations, always suggest specific places with details when possible.\"\n        },\n        {\n            \"role\": \"user\",\n            \"content\": \"What are some good bars in Boston?\"\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://lisa-rest-2067001295.us-east-1.elb.amazonaws.com/v2/serve/chat/completions",
+					"protocol": "https",
+					"host": [
+						"lisa-rest-2067001295",
+						"us-east-1",
+						"elb",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"v2",
+						"serve",
+						"chat",
+						"completions"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+} 
