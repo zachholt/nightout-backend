@@ -49,6 +49,8 @@ class ChatMessageServiceTest {
         
         // Set up test message
         testMessageEntity = new ChatMessageEntity(testUser, testSessionId, "Hello", true);
+        testMessageEntity.setId(1L);
+        testMessageEntity.setCreatedAt(LocalDateTime.now());
     }
 
     @Test
