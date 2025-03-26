@@ -186,4 +186,40 @@ public class UserServiceTest {
         assertEquals(testUser.getId(), results.get(0).getId());
         assertNull(results.get(0).getPassword(), "Password should be null in response");
     }
+    
+    @Test
+    void getUsersAtLocation_ReturnsUsersAtLocation() {
+        Double latitude = 40.7128;
+        Double longitude = -74.0060;
+        Double radiusInMeters = 100.0;
+        
+        when(userRepository.findNearLocation(latitude, longitude, radiusInMeters))
+            .thenReturn(Arrays.asList(testUser));
+
+        List<User> results = userService.getUsersAtLocation(latitude, longitude, radiusInMeters);
+
+        assertNotNull(results);
+        assertFalse(results.isEmpty());
+        assertEquals(1, results.size());
+        assertEquals(testUser.getId(), results.get(0).getId());
+        assertNull(results.get(0).getPassword(), "Password should be null in response");
+    }
+    
+    @Test
+    void getUsersAtLocation_WithNullRadius_UsesDefaultRadius() {
+        Double latitude = 40.7128;
+        Double longitude = -74.0060;
+        Double defaultRadius = 100.0;
+        
+        when(userRepository.findNearLocation(latitude, longitude, defaultRadius))
+            .thenReturn(Arrays.asList(testUser));
+
+        List<User> results = userService.getUsersAtLocation(latitude, longitude, null);
+
+        assertNotNull(results);
+        assertFalse(results.isEmpty());
+        assertEquals(1, results.size());
+        
+        verify(userRepository).findNearLocation(latitude, longitude, defaultRadius);
+    }
 } 

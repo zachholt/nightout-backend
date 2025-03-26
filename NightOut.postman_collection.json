@@ -191,6 +191,35 @@
             },
             "description": "Find users within a specified radius of given coordinates"
           }
+        },
+        {
+          "name": "Find Users At Location",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/users/at-location?latitude=40.7128&longitude=-74.0060&radiusInMeters=100",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "at-location"],
+              "query": [
+                {
+                  "key": "latitude",
+                  "value": "40.7128",
+                  "description": "Latitude coordinate"
+                },
+                {
+                  "key": "longitude",
+                  "value": "-74.0060",
+                  "description": "Longitude coordinate"
+                },
+                {
+                  "key": "radiusInMeters",
+                  "value": "100",
+                  "description": "Search radius in meters (default: 100)"
+                }
+              ]
+            },
+            "description": "Find users at a specific location (venue) within a small radius"
+          }
         }
       ]
     },

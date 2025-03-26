@@ -171,4 +171,41 @@ public class UserControllerTest {
         assertFalse(userResponses.isEmpty());
         assertTrue(userResponses.get(0) instanceof UserResponse);
     }
+
+    @Test
+    void getUsersAtLocation_WhenUsersFound_ReturnsUserList() {
+        Double latitude = 40.7128;
+        Double longitude = -74.0060;
+        Double radiusInMeters = 100.0;
+        List<User> users = Arrays.asList(testUser);
+
+        when(userService.getUsersAtLocation(latitude, longitude, radiusInMeters)).thenReturn(users);
+
+        ResponseEntity<?> response = userController.getUsersAtLocation(latitude, longitude, radiusInMeters);
+
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody() instanceof List);
+        List<?> userResponses = (List<?>) response.getBody();
+        assertFalse(userResponses.isEmpty());
+        assertTrue(userResponses.get(0) instanceof UserResponse);
+    }
+    
+    @Test
+    void getUsersAtLocation_WithNullRadius_ReturnsUserList() {
+        Double latitude = 40.7128;
+        Double longitude = -74.0060;
+        List<User> users = Arrays.asList(testUser);
+
+        when(userService.getUsersAtLocation(latitude, longitude, null)).thenReturn(users);
+
+        ResponseEntity<?> response = userController.getUsersAtLocation(latitude, longitude, null);
+
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody() instanceof List);
+        List<?> userResponses = (List<?>) response.getBody();
+        assertFalse(userResponses.isEmpty());
+        assertTrue(userResponses.get(0) instanceof UserResponse);
+    }
 } 

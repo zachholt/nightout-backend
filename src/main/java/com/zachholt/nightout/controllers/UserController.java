@@ -228,4 +228,33 @@ public class UserController {
             .collect(Collectors.toList());
         return ResponseEntity.ok(userResponses);
     }
+    
+    @Operation(summary = "Find users at a specific location", 
+              description = "Find users who are checked in at a specific location")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Users found",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid coordinates")
+    })
+    @GetMapping("/at-location")
+    @CrossOrigin(origins = "*")
+    public ResponseEntity<?> getUsersAtLocation(
+        @Parameter(description = "Latitude coordinate") @RequestParam Double latitude,
+        @Parameter(description = "Longitude coordinate") @RequestParam Double longitude,
+        @Parameter(description = "Search radius in meters (default: 100)") @RequestParam(required = false) Double radiusInMeters) {
+        
+        List<User> users = userService.getUsersAtLocation(latitude, longitude, radiusInMeters);
+        List<UserResponse> userResponses = users.stream()
+            .map(user -> new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getCreatedAt(),
+                user.getProfileImage(),
+                user.getLatitude(),
+                user.getLongitude()
+            ))
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(userResponses);
+    }
 } 

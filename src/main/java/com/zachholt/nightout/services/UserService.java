@@ -109,4 +109,25 @@ public class UserService {
             .peek(user -> user.setPassword(null))  // Don't return passwords
             .collect(Collectors.toList());
     }
+    
+    /**
+     * Find users at a specific location using the location's coordinates
+     * This is used to show how many people are at a specific nightlife venue
+     * 
+     * @param latitude Latitude of the location
+     * @param longitude Longitude of the location
+     * @param radiusInMeters Radius in meters around the location (default: 100m)
+     * @return List of users at the location
+     */
+    public List<User> getUsersAtLocation(Double latitude, Double longitude, Double radiusInMeters) {
+        // Default radius of 100 meters if not specified
+        if (radiusInMeters == null) {
+            radiusInMeters = 100.0;
+        }
+        
+        // Use the repository method to find users near the location
+        return userRepository.findNearLocation(latitude, longitude, radiusInMeters).stream()
+            .peek(user -> user.setPassword(null))  // Don't return passwords
+            .collect(Collectors.toList());
+    }
 }
