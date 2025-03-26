@@ -11,13 +11,21 @@ public class ChatRequest {
     
     @Schema(description = "Previous messages in the conversation", nullable = true)
     private List<ChatMessage> history;
+    
+    @Schema(description = "Session identifier to group conversation messages", example = "550e8400-e29b-41d4-a716-446655440000")
+    private String sessionId;
+    
+    @Schema(description = "Email of the user making the request (optional for anonymous chats)", example = "user@example.com")
+    private String userEmail;
 
     public ChatRequest() {
     }
 
-    public ChatRequest(String userMessage, List<ChatMessage> history) {
+    public ChatRequest(String userMessage, List<ChatMessage> history, String sessionId, String userEmail) {
         this.userMessage = userMessage;
         this.history = history;
+        this.sessionId = sessionId;
+        this.userEmail = userEmail;
     }
 
     public String getUserMessage() {
@@ -34,5 +42,21 @@ public class ChatRequest {
 
     public void setHistory(List<ChatMessage> history) {
         this.history = history;
+    }
+    
+    public String getSessionId() {
+        return sessionId;
+    }
+    
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
+    
+    public String getUserEmail() {
+        return userEmail;
+    }
+    
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
     }
 } 

@@ -316,7 +316,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"userMessage\": \"Hello, can you help me find a good bar?\",\n    \"history\": [\n        {\n            \"id\": \"1\",\n            \"text\": \"Hi there! I'm your NightOut assistant. How can I help you plan your night out today?\",\n            \"isUser\": false,\n            \"timestamp\": \"2023-05-15T12:00:00\"\n        }\n    ]\n}"
+              "raw": "{\n    \"userMessage\": \"Hello, can you help me find a good bar?\",\n    \"sessionId\": \"c532b4a5-6c17-4d81-a4d1-13a7b51f86e7\",\n    \"userEmail\": \"user@example.com\",\n    \"history\": [\n        {\n            \"id\": \"1\",\n            \"text\": \"Hi there! I'm your NightOut assistant. How can I help you plan your night out today?\",\n            \"isUser\": false,\n            \"timestamp\": \"2023-05-15T12:00:00\"\n        }\n    ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/chat/stream",
@@ -338,7 +338,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"userMessage\": \"Hello, can you help me find a good bar?\",\n    \"history\": [\n        {\n            \"id\": \"1\",\n            \"text\": \"Hi there! I'm your NightOut assistant. How can I help you plan your night out today?\",\n            \"isUser\": false,\n            \"timestamp\": \"2023-05-15T12:00:00\"\n        }\n    ]\n}"
+              "raw": "{\n    \"userMessage\": \"Hello, can you help me find a good bar?\",\n    \"sessionId\": \"c532b4a5-6c17-4d81-a4d1-13a7b51f86e7\",\n    \"userEmail\": \"user@example.com\",\n    \"history\": [\n        {\n            \"id\": \"1\",\n            \"text\": \"Hi there! I'm your NightOut assistant. How can I help you plan your night out today?\",\n            \"isUser\": false,\n            \"timestamp\": \"2023-05-15T12:00:00\"\n        }\n    ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/chat",
@@ -346,6 +346,56 @@
               "path": ["api", "chat"]
             },
             "description": "Get a single response from AI assistant"
+          }
+        },
+        {
+          "name": "Get Chat History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/history/c532b4a5-6c17-4d81-a4d1-13a7b51f86e7",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "history", "c532b4a5-6c17-4d81-a4d1-13a7b51f86e7"]
+            },
+            "description": "Get all messages for a specific chat session"
+          }
+        },
+        {
+          "name": "Get User Sessions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/sessions?email=user@example.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "sessions"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "user@example.com",
+                  "description": "Email of the user"
+                }
+              ]
+            },
+            "description": "Get all chat session IDs for a user"
+          }
+        },
+        {
+          "name": "Delete Session",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/sessions/c532b4a5-6c17-4d81-a4d1-13a7b51f86e7?email=user@example.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "sessions", "c532b4a5-6c17-4d81-a4d1-13a7b51f86e7"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "user@example.com",
+                  "description": "Email of the user"
+                }
+              ]
+            },
+            "description": "Delete a chat session and all its messages"
           }
         }
       ]
