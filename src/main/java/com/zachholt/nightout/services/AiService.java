@@ -29,31 +29,32 @@ public class AiService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
     
-    @Value("${ai.api.url}")
-    private String aiApiUrl;
+    // GenAI API URL from Postman collection
+    private static final String GENAI_API_URL = "https://lisa-rest-2067001295.us-east-1.elb.amazonaws.com";
+    private static final String API_TOKEN = "test_token";
+    private static final String DEFAULT_MODEL = "mistral-vllm";
     
-    @Value("${ai.api.token}")
-    private String aiApiToken;
+    private static final String SYSTEM_PROMPT = 
+        "You are the NightOut AI assistant, designed to help users find bars, restaurants, and entertainment venues. " +
+        "You provide friendly, concise, and helpful information about nightlife options. " +
+        "If asked about locations, always suggest specific places with details when possible.";
     
     public AiService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
-        this.webClient = webClientBuilder.baseUrl(aiApiUrl)
+        this.webClient = webClientBuilder.baseUrl(GENAI_API_URL)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader(HttpHeaders.ACCEPT, "*/*")
                 .defaultHeader(HttpHeaders.CACHE_CONTROL, "no-cache")
                 .defaultHeader(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate, br")
                 .defaultHeader(HttpHeaders.CONNECTION, "keep-alive")
+                .defaultHeader(HttpHeaders.AUTHORIZATION, API_TOKEN)
                 .filters(exchangeFilterFunctions -> {
                     exchangeFilterFunctions.add(logRequest());
                     exchangeFilterFunctions.add(logResponse());
                 })
                 .build();
         
-        // Log the token format for debugging
-        logger.info("AI API URL: {}", aiApiUrl);
-        logger.info("AI API Token format: {} (length: {})", 
-                aiApiToken != null ? (aiApiToken.startsWith("Bearer") ? "Bearer..." : "token...") : "null",
-                aiApiToken != null ? aiApiToken.length() : 0);
+        logger.info("AI Service initialized with API URL: {}", GENAI_API_URL);
     }
     
     /**
@@ -61,32 +62,7 @@ public class AiService {
      * Each string represents a chunk of the stream in SSE format.
      */
     public Flux<String> streamChatCompletion(List<Map<String, Object>> messages) {
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "mistral-vllm");
-        requestBody.put("temperature", null);
-        requestBody.put("top_p", 0.01);
-        requestBody.put("frequency_penalty", null);
-        requestBody.put("presence_penalty", null);
-        requestBody.put("max_tokens", null);
-        requestBody.put("n", null);
-        requestBody.put("stream", true);
-        requestBody.put("seed", null);
-        requestBody.put("stream_options", Map.of("include_usage", true));
-        
-        // Format messages for the AI API
-        List<Map<String, Object>> formattedMessages = new ArrayList<>();
-        Map<String, Object> systemMessage = new HashMap<>();
-        systemMessage.put("role", "system");
-        systemMessage.put("content", "You are the NightOut AI assistant, designed to help users find bars, restaurants, and entertainment venues. " +
-                           "You provide friendly, concise, and helpful information about nightlife options. " +
-                           "If asked about locations, always suggest specific places with details when possible.");
-        formattedMessages.add(systemMessage);
-        
-        // Add the user messages
-        formattedMessages.addAll(formatMessages(messages));
-        
-        requestBody.put("messages", formattedMessages);
-        requestBody.put("stop", List.of("\nUser:", "\n User:", "User:", "User"));
+        Map<String, Object> requestBody = buildRequestBody(messages, true);
         
         try {
             logger.info("Sending streaming request to AI API: {}", objectMapper.writeValueAsString(requestBody));
@@ -97,11 +73,11 @@ public class AiService {
         // Return the raw text stream directly without transformation
         return webClient.post()
                 .uri("/v2/serve/chat/completions")
-                .header("Authorization", "test_token")  // Use the token from configuration
+                .accept(MediaType.TEXT_EVENT_STREAM)
                 .body(BodyInserters.fromValue(requestBody))
                 .retrieve()
                 .bodyToFlux(String.class)
-                .onErrorResume(e -> {
+                .doOnError(e -> {
                     if (e instanceof WebClientResponseException) {
                         WebClientResponseException wcre = (WebClientResponseException) e;
                         logger.error("API Error Response: {} - {}", 
@@ -110,36 +86,14 @@ public class AiService {
                     } else {
                         logger.error("Error calling AI API: ", e);
                     }
+                })
+                .onErrorResume(e -> {
                     return Flux.error(e);
                 });
     }
     
     public Map<String, Object> chatCompletion(List<Map<String, Object>> messages) {
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "mistral-vllm");
-        requestBody.put("temperature", null);
-        requestBody.put("top_p", 0.01);
-        requestBody.put("frequency_penalty", null);
-        requestBody.put("presence_penalty", null);
-        requestBody.put("max_tokens", null);
-        requestBody.put("n", null);
-        requestBody.put("stream", false);
-        requestBody.put("seed", null);
-        
-        // Format messages for the AI API
-        List<Map<String, Object>> formattedMessages = new ArrayList<>();
-        Map<String, Object> systemMessage = new HashMap<>();
-        systemMessage.put("role", "system");
-        systemMessage.put("content", "You are the NightOut AI assistant, designed to help users find bars, restaurants, and entertainment venues. " +
-                           "You provide friendly, concise, and helpful information about nightlife options. " +
-                           "If asked about locations, always suggest specific places with details when possible.");
-        formattedMessages.add(systemMessage);
-        
-        // Add the user messages
-        formattedMessages.addAll(formatMessages(messages));
-        
-        requestBody.put("messages", formattedMessages);
-        requestBody.put("stop", List.of("\nUser:", "\n User:", "User:", "User"));
+        Map<String, Object> requestBody = buildRequestBody(messages, false);
         
         try {
             logger.info("Sending request to AI API: {}", objectMapper.writeValueAsString(requestBody));
@@ -150,7 +104,6 @@ public class AiService {
         try {
             return webClient.post()
                     .uri("/v2/serve/chat/completions")
-                    .header("Authorization", "test_token") // Use the token from configuration
                     .body(BodyInserters.fromValue(requestBody))
                     .retrieve()
                     .bodyToMono(Map.class)
@@ -161,6 +114,43 @@ public class AiService {
                     e.getResponseBodyAsString());
             throw e;
         }
+    }
+    
+    /**
+     * Build the request body according to the GenAI Postman collection format
+     */
+    private Map<String, Object> buildRequestBody(List<Map<String, Object>> userMessages, boolean isStreaming) {
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", DEFAULT_MODEL);
+        requestBody.put("temperature", null);
+        requestBody.put("top_p", 0.01);
+        requestBody.put("frequency_penalty", null);
+        requestBody.put("presence_penalty", null);
+        requestBody.put("max_tokens", null);
+        requestBody.put("n", null);
+        requestBody.put("stop", List.of("\nUser:", "\n User:", "User:", "User"));
+        requestBody.put("stream", isStreaming);
+        requestBody.put("seed", null);
+        
+        if (isStreaming) {
+            requestBody.put("stream_options", Map.of("include_usage", true));
+        }
+        
+        // Format messages for the AI API in exact Postman format
+        List<Map<String, Object>> formattedMessages = new ArrayList<>();
+        
+        // Add system message first
+        Map<String, Object> systemMessage = new HashMap<>();
+        systemMessage.put("role", "system");
+        systemMessage.put("content", SYSTEM_PROMPT);
+        formattedMessages.add(systemMessage);
+        
+        // Add all user and assistant messages
+        formattedMessages.addAll(formatMessages(userMessages));
+        
+        requestBody.put("messages", formattedMessages);
+        
+        return requestBody;
     }
     
     /**
