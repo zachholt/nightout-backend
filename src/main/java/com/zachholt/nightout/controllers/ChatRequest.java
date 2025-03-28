@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.ArrayList;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.zachholt.nightout.models.ChatMessage;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ChatRequest {
@@ -19,12 +18,6 @@ public class ChatRequest {
     private Boolean stream = false;
     private Integer seed;
     private List<Message> messages = new ArrayList<>();
-    
-    // Fields from original ChatRequest if any
-    private String userMessage;
-    private String sessionId;
-    private String userEmail;
-    private List<ChatMessage> history;
     
     // Nested class for messages
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -161,51 +154,6 @@ public class ChatRequest {
         this.messages = messages;
     }
     
-    // Getters and setters for original ChatRequest fields
-    
-    public String getUserMessage() {
-        return userMessage;
-    }
-    
-    public void setUserMessage(String userMessage) {
-        this.userMessage = userMessage;
-    }
-    
-    public String getSessionId() {
-        return sessionId;
-    }
-    
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
-    }
-    
-    public String getUserEmail() {
-        return userEmail;
-    }
-    
-    public void setUserEmail(String userEmail) {
-        this.userEmail = userEmail;
-    }
-    
-    public List<ChatMessage> getHistory() {
-        return history;
-    }
-    
-    public void setHistory(List<ChatMessage> history) {
-        this.history = history;
-    }
-    
-    // Helper method to extract user message from messages list
-    public String extractUserMessage() {
-        if (messages != null && !messages.isEmpty()) {
-            Message lastMessage = messages.get(messages.size() - 1);
-            if ("user".equals(lastMessage.getRole())) {
-                return lastMessage.getContent();
-            }
-        }
-        return userMessage;
-    }
-    
     @Override
     public String toString() {
         return "ChatRequest{" +
@@ -220,9 +168,6 @@ public class ChatRequest {
                 ", stream=" + stream +
                 ", seed=" + seed +
                 ", messages=" + messages +
-                ", userMessage='" + userMessage + '\'' +
-                ", sessionId='" + sessionId + '\'' +
-                ", userEmail='" + userEmail + '\'' +
                 '}';
     }
 }
