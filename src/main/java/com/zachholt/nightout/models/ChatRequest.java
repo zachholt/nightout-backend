@@ -1,10 +1,9 @@
-package com.zachholt.nightout.controllers;
+package com.zachholt.nightout.models;
 
 import java.util.List;
 import java.util.ArrayList;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.zachholt.nightout.models.ChatMessage;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ChatRequest {
@@ -18,13 +17,8 @@ public class ChatRequest {
     private List<String> stop = new ArrayList<>();
     private Boolean stream = false;
     private Integer seed;
+    private StreamOptions streamOptions;
     private List<Message> messages = new ArrayList<>();
-    
-    // Fields from original ChatRequest if any
-    private String userMessage;
-    private String sessionId;
-    private String userEmail;
-    private List<ChatMessage> history;
     
     // Nested class for messages
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -60,6 +54,35 @@ public class ChatRequest {
             return "Message{" +
                     "role='" + role + '\'' +
                     ", content='" + content + '\'' +
+                    '}';
+        }
+    }
+    
+    // Nested class for stream options
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class StreamOptions {
+        private Boolean includeUsage;
+        
+        public StreamOptions() {}
+        
+        public StreamOptions(Boolean includeUsage) {
+            this.includeUsage = includeUsage;
+        }
+        
+        @JsonProperty("include_usage")
+        public Boolean getIncludeUsage() {
+            return includeUsage;
+        }
+        
+        @JsonProperty("include_usage")
+        public void setIncludeUsage(Boolean includeUsage) {
+            this.includeUsage = includeUsage;
+        }
+        
+        @Override
+        public String toString() {
+            return "StreamOptions{" +
+                    "includeUsage=" + includeUsage +
                     '}';
         }
     }
@@ -153,57 +176,22 @@ public class ChatRequest {
         this.seed = seed;
     }
     
+    @JsonProperty("stream_options")
+    public StreamOptions getStreamOptions() {
+        return streamOptions;
+    }
+    
+    @JsonProperty("stream_options")
+    public void setStreamOptions(StreamOptions streamOptions) {
+        this.streamOptions = streamOptions;
+    }
+    
     public List<Message> getMessages() {
         return messages;
     }
     
     public void setMessages(List<Message> messages) {
         this.messages = messages;
-    }
-    
-    // Getters and setters for original ChatRequest fields
-    
-    public String getUserMessage() {
-        return userMessage;
-    }
-    
-    public void setUserMessage(String userMessage) {
-        this.userMessage = userMessage;
-    }
-    
-    public String getSessionId() {
-        return sessionId;
-    }
-    
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
-    }
-    
-    public String getUserEmail() {
-        return userEmail;
-    }
-    
-    public void setUserEmail(String userEmail) {
-        this.userEmail = userEmail;
-    }
-    
-    public List<ChatMessage> getHistory() {
-        return history;
-    }
-    
-    public void setHistory(List<ChatMessage> history) {
-        this.history = history;
-    }
-    
-    // Helper method to extract user message from messages list
-    public String extractUserMessage() {
-        if (messages != null && !messages.isEmpty()) {
-            Message lastMessage = messages.get(messages.size() - 1);
-            if ("user".equals(lastMessage.getRole())) {
-                return lastMessage.getContent();
-            }
-        }
-        return userMessage;
     }
     
     @Override
@@ -219,10 +207,8 @@ public class ChatRequest {
                 ", stop=" + stop +
                 ", stream=" + stream +
                 ", seed=" + seed +
+                ", streamOptions=" + streamOptions +
                 ", messages=" + messages +
-                ", userMessage='" + userMessage + '\'' +
-                ", sessionId='" + sessionId + '\'' +
-                ", userEmail='" + userEmail + '\'' +
                 '}';
     }
 }
