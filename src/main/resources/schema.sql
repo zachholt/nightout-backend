@@ -39,18 +39,3 @@ CREATE TABLE IF NOT EXISTS favorites (
     CONSTRAINT favorites_user_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT favorites_unique_user_location UNIQUE (user_id, location_id)
 );
-
--- Create chat messages table if it doesn't exist
-CREATE TABLE IF NOT EXISTS chat_messages (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT,
-    session_id VARCHAR(255) NOT NULL,
-    content TEXT NOT NULL,
-    is_user BOOLEAN NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chat_messages_user_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-);
-
--- Create an index on session_id to speed up conversation retrieval
-CREATE INDEX IF NOT EXISTS idx_chat_messages_session_id ON chat_messages(session_id); 
-

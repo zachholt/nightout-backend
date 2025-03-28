@@ -3,7 +3,7 @@ package com.zachholt.nightout.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zachholt.nightout.models.ChatMessage;
 import com.zachholt.nightout.services.AiService;
-import com.zachholt.nightout.services.ChatMessageService;
+//import com.zachholt.nightout.services.ChatMessageService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -38,8 +38,8 @@ public class ChatController {
     @Autowired
     private AiService aiService;
     
-    @Autowired
-    private ChatMessageService chatMessageService;
+    //@Autowired
+    //private ChatMessageService chatMessageService;
     
     @Autowired
     private ObjectMapper objectMapper;
@@ -60,74 +60,24 @@ public class ChatController {
         @ApiResponse(responseCode = "400", description = "Invalid request format"),
         @ApiResponse(responseCode = "500", description = "Server error or AI API unavailable")
     })
-    @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> streamChat(@RequestBody ChatRequest chatRequest) {
-        List<Map<String, Object>> messages = convertToAiMessages(chatRequest);
-        logger.info("Processing stream chat request with message: {}", chatRequest.getUserMessage());
+    // @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    // public Flux<String> streamChat(@RequestBody ChatRequest chatRequest) {
+    //     List<Map<String, Object>> messages = convertToAiMessages(chatRequest);
+    //     logger.info("Processing stream chat request with message: {}", chatRequest.getUserMessage());
         
-        // Save the user message
-        chatMessageService.saveMessage(
-            chatRequest.getUserMessage(), 
-            true, 
-            chatRequest.getSessionId(), 
-            chatRequest.getUserEmail()
-        );
+    //     // Save the user message
+    //     chatMessageService.saveMessage(
+    //         chatRequest.getUserMessage(), 
+    //         true, 
+    //         chatRequest.getSessionId(), 
+    //         chatRequest.getUserEmail()
+    //     );
         
-        // Stream will be handled in the client - we don't save AI messages
-        // directly as they come in chunks
-        return aiService.streamChatCompletion(messages)
-            .timeout(Duration.ofMinutes(2));
-    }
-    
-    @Operation(
-        summary = "Get chat history",
-        description = "Get all messages for a specific session"
-    )
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200", 
-            description = "Successfully returned chat history",
-            content = @Content(schema = @Schema(implementation = ChatMessage.class))
-        )
-    })
-    @GetMapping("/history/{sessionId}")
-    public ResponseEntity<List<ChatMessage>> getChatHistory(@PathVariable String sessionId) {
-        return ResponseEntity.ok(chatMessageService.getMessagesBySessionId(sessionId));
-    }
-    
-    @Operation(
-        summary = "Get user chat sessions",
-        description = "Get all chat sessions for a user"
-    )
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200", 
-            description = "Successfully returned user sessions",
-            content = @Content(schema = @Schema(implementation = String.class))
-        )
-    })
-    @GetMapping("/sessions")
-    public ResponseEntity<List<String>> getUserSessions(@RequestParam String email) {
-        return ResponseEntity.ok(chatMessageService.getUserSessions(email));
-    }
-    
-    @Operation(
-        summary = "Delete chat session",
-        description = "Delete all messages in a chat session"
-    )
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Successfully deleted session"),
-        @ApiResponse(responseCode = "404", description = "Session not found")
-    })
-    @DeleteMapping("/sessions/{sessionId}")
-    public ResponseEntity<?> deleteSession(@PathVariable String sessionId, @RequestParam String email) {
-        boolean deleted = chatMessageService.deleteSession(sessionId, email);
-        if (deleted) {
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
+    //     // Stream will be handled in the client - we don't save AI messages
+    //     // directly as they come in chunks
+    //     return aiService.streamChatCompletion(messages)
+    //         .timeout(Duration.ofMinutes(2));
+    // }
     
     private List<Map<String, Object>> convertToAiMessages(ChatRequest chatRequest) {
         List<Map<String, Object>> messages = new ArrayList<>();
@@ -170,13 +120,13 @@ public class ChatController {
     public ResponseEntity<String> mistralChat(@RequestBody ChatRequest chatRequest) {
         logger.info("Processing chat request with message: {}", chatRequest.getUserMessage());
         
-        // Save the user message
-        chatMessageService.saveMessage(
-            chatRequest.getUserMessage(), 
-            true, 
-            chatRequest.getSessionId(), 
-            chatRequest.getUserEmail()
-        );
+        // // Save the user message
+        // chatMessageService.saveMessage(
+        //     chatRequest.getUserMessage(), 
+        //     true, 
+        //     chatRequest.getSessionId(), 
+        //     chatRequest.getUserEmail()
+        // );
         
         Map<String, Object> response = aiService.chatCompletion(chatRequest);
         
