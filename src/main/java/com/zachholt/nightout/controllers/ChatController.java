@@ -2,7 +2,6 @@ package com.zachholt.nightout.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zachholt.nightout.models.ChatMessage;
-import com.zachholt.nightout.models.ChatRequest;
 import com.zachholt.nightout.services.AiService;
 import com.zachholt.nightout.services.ChatMessageService;
 
@@ -26,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -77,63 +77,6 @@ public class ChatController {
         // directly as they come in chunks
         return aiService.streamChatCompletion(messages)
             .timeout(Duration.ofMinutes(2));
-    }
-    
-    @Operation(
-        summary = "Chat with AI assistant",
-        description = "Get a single response from AI assistant"
-    )
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200", 
-            description = "Successfully returned chat response",
-            content = @Content(schema = @Schema(implementation = ChatMessage.class))
-        ),
-        @ApiResponse(responseCode = "400", description = "Invalid request format"),
-        @ApiResponse(responseCode = "500", description = "Server error or AI API unavailable")
-    })
-    @PostMapping
-    public ChatMessage chat(@RequestBody ChatRequest chatRequest) {
-        List<Map<String, Object>> messages = convertToAiMessages(chatRequest);
-        logger.info("Processing chat request with message: {}", chatRequest.getUserMessage());
-        
-        // Save the user message
-        chatMessageService.saveMessage(
-            chatRequest.getUserMessage(), 
-            true, 
-            chatRequest.getSessionId(), 
-            chatRequest.getUserEmail()
-        );
-        
-        Map<String, Object> response = aiService.chatCompletion(messages);
-        
-        if (response != null && response.containsKey("choices")) {
-            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
-            if (!choices.isEmpty()) {
-                Map<String, Object> choice = choices.get(0);
-                Map<String, Object> message = (Map<String, Object>) choice.get("message");
-                if (message != null && message.containsKey("content")) {
-                    String content = (String) message.get("content");
-                    
-                    // Save the AI response
-                    return chatMessageService.saveMessage(
-                        content, 
-                        false, 
-                        chatRequest.getSessionId(), 
-                        chatRequest.getUserEmail()
-                    );
-                }
-            }
-        }
-        
-        String errorMessage = "I'm sorry, I couldn't process your request.";
-        // Save the error message
-        return chatMessageService.saveMessage(
-            errorMessage, 
-            false, 
-            chatRequest.getSessionId(), 
-            chatRequest.getUserEmail()
-        );
     }
     
     @Operation(
@@ -207,4 +150,52 @@ public class ChatController {
         
         return messages;
     }
-} 
+
+    /**
+     * Endpoint for mistral-vllm model that returns formatted response
+     */
+    @Operation(
+        summary = "Chat with Mistral VLLM model",
+        description = "Get a single response from Mistral VLLM assistant with standardized output format"
+    )
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Successfully returned chat response"
+        ),
+        @ApiResponse(responseCode = "400", description = "Invalid request format"),
+        @ApiResponse(responseCode = "500", description = "Server error or AI API unavailable")
+    })
+    @PostMapping("/chat")
+    public ResponseEntity<String> mistralChat(@RequestBody ChatRequest chatRequest) {
+        logger.info("Processing chat request with message: {}", chatRequest.getUserMessage());
+        
+        // Save the user message
+        chatMessageService.saveMessage(
+            chatRequest.getUserMessage(), 
+            true, 
+            chatRequest.getSessionId(), 
+            chatRequest.getUserEmail()
+        );
+        
+        Map<String, Object> response = aiService.chatCompletion(chatRequest);
+        
+        if (response != null && response.containsKey("choices")) {
+            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
+            if (!choices.isEmpty()) {
+                Map<String, Object> choice = choices.get(0);
+                Map<String, Object> message = (Map<String, Object>) choice.get("message");
+                if (message != null && message.containsKey("content")) {
+                    String content = (String) message.get("content");
+                    
+                    // Save the AI response
+                    return ResponseEntity.ok(content);
+                }
+            }
+        }
+        
+        String errorMessage = "I'm sorry, I couldn't process your request.";
+        // Save the error message
+        return ResponseEntity.internalServerError().body(errorMessage);
+    }
+}

@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zachholt.nightout.controllers.ChatRequest;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -44,14 +45,7 @@ public class AiService {
         this.webClient = webClientBuilder.baseUrl(GENAI_API_URL)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader(HttpHeaders.ACCEPT, "*/*")
-                .defaultHeader(HttpHeaders.CACHE_CONTROL, "no-cache")
-                .defaultHeader(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate, br")
-                .defaultHeader(HttpHeaders.CONNECTION, "keep-alive")
                 .defaultHeader(HttpHeaders.AUTHORIZATION, API_TOKEN)
-                .filters(exchangeFilterFunctions -> {
-                    exchangeFilterFunctions.add(logRequest());
-                    exchangeFilterFunctions.add(logResponse());
-                })
                 .build();
         
         logger.info("AI Service initialized with API URL: {}", GENAI_API_URL);
@@ -92,11 +86,9 @@ public class AiService {
                 });
     }
     
-    public Map<String, Object> chatCompletion(List<Map<String, Object>> messages) {
-        Map<String, Object> requestBody = buildRequestBody(messages, false);
-        
+    public Map<String, Object> chatCompletion(ChatRequest chatRequest) {        
         try {
-            logger.info("Sending request to AI API: {}", objectMapper.writeValueAsString(requestBody));
+            logger.info("Sending request to AI API: {}", objectMapper.writeValueAsString(chatRequest));
         } catch (Exception e) {
             logger.error("Error logging request: ", e);
         }
@@ -104,7 +96,7 @@ public class AiService {
         try {
             return webClient.post()
                     .uri("/v2/serve/chat/completions")
-                    .body(BodyInserters.fromValue(requestBody))
+                    .body(BodyInserters.fromValue(chatRequest))
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
