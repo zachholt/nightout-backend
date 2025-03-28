@@ -33,7 +33,12 @@ public class CorsConfig {
             "exp://localhost:8081",
             "exp://localhost:19000",
             "exp://localhost:19001",
-            "exp://localhost:19002"
+            "exp://localhost:19002",
+            "http://44.203.161.109:8080",
+            "http://44.203.161.109:19000",
+            "http://44.203.161.109:19006",
+            "exp://44.203.161.109:8080",
+            "exp://44.203.161.109:19000"
         ));
         corsConfiguration.setAllowedHeaders(Arrays.asList(
             "Origin", 
