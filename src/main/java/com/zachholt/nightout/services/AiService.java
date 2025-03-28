@@ -3,6 +3,7 @@ package com.zachholt.nightout.services;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
@@ -12,8 +13,12 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zachholt.nightout.controllers.ChatRequest;
 
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,11 +47,35 @@ public class AiService {
     
     public AiService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
-        this.webClient = webClientBuilder.baseUrl(GENAI_API_URL)
+        
+        WebClient tempWebClient;
+        try {
+            // Create SSL context that ignores certificate validation
+            final SslContext sslContext = SslContextBuilder
+                .forClient()
+                .trustManager(InsecureTrustManagerFactory.INSTANCE)
+                .build();
+            
+            // Create HTTP client with the insecure SSL context
+            final HttpClient httpClient = HttpClient.create()
+                .secure(t -> t.sslContext(sslContext));
+                
+            // Build the WebClient with SSL ignoring configuration
+            tempWebClient = webClientBuilder.baseUrl(GENAI_API_URL)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader(HttpHeaders.ACCEPT, "*/*")
+                .defaultHeader(HttpHeaders.AUTHORIZATION, API_TOKEN)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
+        } catch (Exception e) {
+            logger.error("Failed to configure SSL context, using default WebClient", e);
+            tempWebClient = webClientBuilder.baseUrl(GENAI_API_URL)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader(HttpHeaders.ACCEPT, "*/*")
                 .defaultHeader(HttpHeaders.AUTHORIZATION, API_TOKEN)
                 .build();
+        }
+        this.webClient = tempWebClient;
         
         logger.info("AI Service initialized with API URL: {}", GENAI_API_URL);
     }
@@ -203,4 +232,4 @@ public class AiService {
             return Mono.just(clientResponse);
         });
     }
-} 
+}
