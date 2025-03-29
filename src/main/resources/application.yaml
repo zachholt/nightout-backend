@@ -2,7 +2,7 @@ spring:
   application:
     name: NightoutAPI
   datasource:
-    url: jdbc:postgresql://nightout-postgres:5432/nightoutdb
+    url: jdbc:postgresql://localhost:5432/nightoutdb
     driverClassName: org.postgresql.Driver
     username: postgres
     password: postgres
