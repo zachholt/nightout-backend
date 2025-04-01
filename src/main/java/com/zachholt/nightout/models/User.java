@@ -11,6 +11,9 @@ import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.FetchType;
 
 @Entity(name = "users")
 @Schema(description = "Represents a user in the system")
@@ -46,13 +49,9 @@ public class User {
     @Schema(description = "URL of the user's profile image", example = "https://example.com/profile.jpg")
     private String profileImage = "https://example.com/default-profile.jpg";
 
-    @Column(name = "latitude")
-    @Schema(description = "User's current latitude coordinate", example = "40.7128")
-    private Double latitude;
-
-    @Column(name = "longitude")
-    @Schema(description = "User's current longitude coordinate", example = "-74.0060")
-    private Double longitude;
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @Schema(description = "User's current coordinate information")
+    private Coordinate coordinate;
 
     public Long getId() {
         return id;
@@ -98,19 +97,14 @@ public class User {
         this.profileImage = profileImage;
     }
 
-    public Double getLatitude() {
-        return latitude;
+    public Coordinate getCoordinate() {
+        return coordinate;
     }
 
-    public void setLatitude(Double latitude) {
-        this.latitude = latitude;
-    }
-
-    public Double getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(Double longitude) {
-        this.longitude = longitude;
+    public void setCoordinate(Coordinate coordinate) {
+        if (coordinate != null) {
+            coordinate.setUser(this);
+        }
+        this.coordinate = coordinate;
     }
 }

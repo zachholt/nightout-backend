@@ -26,6 +26,11 @@ public class ChatRequest {
     private String userEmail;
     private List<ChatMessage> history;
     
+    // Location fields for context-aware recommendations
+    private Double latitude;
+    private Double longitude;
+    private String locationName;
+    
     // Nested class for messages
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Message {
@@ -195,6 +200,32 @@ public class ChatRequest {
         this.history = history;
     }
     
+    // Getters and setters for location fields
+    
+    public Double getLatitude() {
+        return latitude;
+    }
+    
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+    
+    public Double getLongitude() {
+        return longitude;
+    }
+    
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
+    }
+    
+    public String getLocationName() {
+        return locationName;
+    }
+    
+    public void setLocationName(String locationName) {
+        this.locationName = locationName;
+    }
+    
     // Helper method to extract user message from messages list
     public String extractUserMessage() {
         if (messages != null && !messages.isEmpty()) {
@@ -223,6 +254,9 @@ public class ChatRequest {
                 ", userMessage='" + userMessage + '\'' +
                 ", sessionId='" + sessionId + '\'' +
                 ", userEmail='" + userEmail + '\'' +
+                ", latitude=" + latitude +
+                ", longitude=" + longitude +
+                ", locationName='" + locationName + '\'' +
                 '}';
     }
 }

@@ -2,29 +2,44 @@ package com.zachholt.nightout.models;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import io.swagger.v3.oas.annotations.media.Schema;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
 @Table(name = "coordinates")
+@Schema(description = "Represents a user's location coordinates")
 public class Coordinate {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(description = "Unique identifier for the coordinate record", example = "101")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @Schema(description = "The user associated with these coordinates")
     private User user;
 
     @Column(nullable = false)
+    @Schema(description = "Latitude coordinate", example = "40.7128")
     private Double latitude;
 
     @Column(nullable = false)
+    @Schema(description = "Longitude coordinate", example = "-74.0060")
     private Double longitude;
 
-    @Column(name = "created_at", nullable = false)
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @Schema(description = "Timestamp when the coordinate was recorded", example = "2024-03-15T10:30:00")
     private LocalDateTime createdAt;
 
     // Default constructor
-    public Coordinate() {
+    public Coordinate() {}
+
+    // Constructor with fields
+    public Coordinate(User user, Double latitude, Double longitude) {
+        this.user = user;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.createdAt = LocalDateTime.now();
     }
 

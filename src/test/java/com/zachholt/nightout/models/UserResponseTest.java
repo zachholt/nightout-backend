@@ -51,15 +51,20 @@ public class UserResponseTest {
     }
 
     @Test
-    void whenConstructedFromUser_thenFieldsMatch() {
+    void whenConstructedFromUserWithCoordinate_thenFieldsMatch() {
         User user = new User();
         user.setId(1L);
         user.setName("Test User");
         user.setEmail("test@example.com");
         user.setCreatedAt(LocalDateTime.now());
         user.setProfileImage("https://example.com/test.jpg");
-        user.setLatitude(40.7128);
-        user.setLongitude(-74.0060);
+        
+        Coordinate coordinate = new Coordinate(user, 40.7128, -74.0060);
+        user.setCoordinate(coordinate);
+
+        Coordinate userCoord = user.getCoordinate();
+        Double lat = userCoord != null ? userCoord.getLatitude() : null;
+        Double lng = userCoord != null ? userCoord.getLongitude() : null;
 
         UserResponse response = new UserResponse(
             user.getId(),
@@ -67,8 +72,8 @@ public class UserResponseTest {
             user.getEmail(),
             user.getCreatedAt(),
             user.getProfileImage(),
-            user.getLatitude(),
-            user.getLongitude()
+            lat,
+            lng
         );
 
         assertEquals(user.getId(), response.getId());
@@ -76,7 +81,35 @@ public class UserResponseTest {
         assertEquals(user.getEmail(), response.getEmail());
         assertEquals(user.getCreatedAt(), response.getCreatedAt());
         assertEquals(user.getProfileImage(), response.getProfileImage());
-        assertEquals(user.getLatitude(), response.getLatitude());
-        assertEquals(user.getLongitude(), response.getLongitude());
+        assertEquals(coordinate.getLatitude(), response.getLatitude());
+        assertEquals(coordinate.getLongitude(), response.getLongitude());
+    }
+    
+    @Test
+    void whenConstructedFromUserWithoutCoordinate_thenLatLonAreNull() {
+        User user = new User();
+        user.setId(1L);
+        user.setName("Test User");
+        user.setEmail("test@example.com");
+        user.setCreatedAt(LocalDateTime.now());
+        user.setProfileImage("https://example.com/test.jpg");
+        user.setCoordinate(null);
+
+        Coordinate userCoord = user.getCoordinate();
+        Double lat = userCoord != null ? userCoord.getLatitude() : null;
+        Double lng = userCoord != null ? userCoord.getLongitude() : null;
+
+        UserResponse response = new UserResponse(
+            user.getId(),
+            user.getName(),
+            user.getEmail(),
+            user.getCreatedAt(),
+            user.getProfileImage(),
+            lat,
+            lng
+        );
+
+        assertNull(response.getLatitude());
+        assertNull(response.getLongitude());
     }
 } 

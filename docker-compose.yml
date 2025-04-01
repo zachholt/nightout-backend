@@ -5,7 +5,7 @@ services:
     image: postgres:14
     container_name: nightout-postgres
     environment:
-      POSTGRES_DB: postgres
+      POSTGRES_DB: nightoutdb
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -15,7 +15,7 @@ services:
     networks:
       - nightout-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nightoutdb"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -31,7 +31,6 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_JPA_HIBERNATE_DDL_AUTO: none
-      SPRING_SQL_INIT_MODE: never
     ports:
       - "8080:8080"
     networks:

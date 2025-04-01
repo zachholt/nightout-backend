@@ -3,6 +3,7 @@ package com.zachholt.nightout.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.zachholt.nightout.models.Coordinate;
 import com.zachholt.nightout.models.User;
 import com.zachholt.nightout.models.UserResponse;
 import com.zachholt.nightout.services.UserService;
@@ -24,6 +25,24 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
+    // Helper method to create UserResponse, handling null coordinates
+    // Duplicated from UserController, consider moving to a shared utility/mapper class
+    private UserResponse createUserResponse(User user) {
+        if (user == null) return null; // Handle null user case
+        Coordinate coordinate = user.getCoordinate();
+        Double lat = (coordinate != null) ? coordinate.getLatitude() : null;
+        Double lng = (coordinate != null) ? coordinate.getLongitude() : null;
+        return new UserResponse(
+            user.getId(),
+            user.getName(),
+            user.getEmail(),
+            user.getCreatedAt(),
+            user.getProfileImage(),
+            lat, // Use extracted lat
+            lng  // Use extracted lng
+        );
+    }
+
     @Operation(summary = "Login user", description = "Authenticate user with email and password")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Successfully authenticated",
@@ -34,15 +53,8 @@ public class AuthController {
     public ResponseEntity<?> login(@Valid @RequestBody User loginRequest) {
         User user = userService.authenticateUser(loginRequest.getEmail(), loginRequest.getPassword());
         if (user != null) {
-            return ResponseEntity.ok(new UserResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getCreatedAt(),
-                user.getProfileImage(),
-                user.getLatitude(),
-                user.getLongitude()
-            ));
+            // Use helper method
+            return ResponseEntity.ok(createUserResponse(user));
         }
         return ResponseEntity.badRequest().body("Invalid credentials");
     }
@@ -58,19 +70,12 @@ public class AuthController {
         if (registerRequest.getName() == null || registerRequest.getName().trim().isEmpty()) {
             return ResponseEntity.badRequest().body("Name is required for registration");
         }
-        
+
         try {
             User user = userService.registerUser(registerRequest);
-            return ResponseEntity.ok(new UserResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getCreatedAt(),
-                user.getProfileImage(),
-                user.getLatitude(),
-                user.getLongitude()
-            ));
-        } catch (Exception e) {
+            // Use helper method
+            return ResponseEntity.ok(createUserResponse(user));
+        } catch (RuntimeException e) { // Catch potential runtime exceptions like "Email already exists"
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

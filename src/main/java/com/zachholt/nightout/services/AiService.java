@@ -41,9 +41,21 @@ public class AiService {
     private static final String DEFAULT_MODEL = "mistral-vllm";
     
     private static final String SYSTEM_PROMPT = 
-        "You are the NightOut AI assistant, designed to help users find bars, restaurants, and entertainment venues. " +
-        "You provide friendly, concise, and helpful information about nightlife options. " +
-        "If asked about locations, always suggest specific places with details when possible.";
+        "You are the NightOut AI assistant, specialized in recommending places for users to enjoy their nights and days out. " +
+        "Your primary focus is to suggest specific venues, restaurants, bars, and entertainment options based on the user's location context. " +
+        "When making recommendations: " +
+        "1. Always use location context when available to provide relevant nearby places. " +
+        "2. Include specific details about each place (type of venue, atmosphere, specialties, typical crowd). " +
+        "3. Suggest timely options (breakfast spots in morning, nightlife in evening). " +
+        "4. Consider weather conditions if mentioned by the user. " +
+        "5. Offer varied options across price ranges. " +
+        "6. Suggest complementary venues for a complete experience (dinner followed by nearby entertainment). " +
+        "When users ask about specific locations, provide helpful information about what to expect. " +
+        "When users ask 'Where's everyone at' or about crowd levels: " +
+        "1. If user density data is available, tell them which locations are currently busiest. " +
+        "2. Recommend popular places that are likely to have good crowds based on the day and time. " +
+        "3. Suggest both busy venues for those looking for crowds and quieter alternatives for those seeking less crowded options. " +
+        "Keep responses friendly, enthusiastic, and concise while giving specific, actionable recommendations.";
     
     public AiService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
@@ -127,13 +139,51 @@ public class AiService {
                     .uri("/v2/serve/chat/completions")
                     .body(BodyInserters.fromValue(chatRequest))
                     .retrieve()
-                    .bodyToMono(Map.class)
+                    .bodyToMono(String.class)
+                    .map(response -> {
+                        try {
+                            // Convert string response to Map
+                            return objectMapper.readValue(response, Map.class);
+                        } catch (Exception e) {
+                            logger.error("Error parsing AI API response: ", e);
+                            // Return a simple map with error information
+                            Map<String, Object> errorMap = new HashMap<>();
+                            Map<String, Object> message = new HashMap<>();
+                            message.put("content", "I'm sorry, I encountered an error processing your request.");
+                            Map<String, Object> choice = new HashMap<>();
+                            choice.put("message", message);
+                            List<Map<String, Object>> choices = new ArrayList<>();
+                            choices.add(choice);
+                            errorMap.put("choices", choices);
+                            return errorMap;
+                        }
+                    })
+                    .onErrorResume(e -> {
+                        logger.error("Error calling AI API: ", e);
+                        // Return a fallback response on error
+                        Map<String, Object> errorMap = new HashMap<>();
+                        Map<String, Object> message = new HashMap<>();
+                        message.put("content", "I'm sorry, I encountered an error connecting to the AI service.");
+                        Map<String, Object> choice = new HashMap<>();
+                        choice.put("message", message);
+                        List<Map<String, Object>> choices = new ArrayList<>();
+                        choices.add(choice);
+                        errorMap.put("choices", choices);
+                        return Mono.just(errorMap);
+                    })
                     .block();
-        } catch (WebClientResponseException e) {
-            logger.error("API Error Response: {} - {}", 
-                    e.getStatusCode(), 
-                    e.getResponseBodyAsString());
-            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error in chat completion: ", e);
+            // Return a fallback response
+            Map<String, Object> errorMap = new HashMap<>();
+            Map<String, Object> message = new HashMap<>();
+            message.put("content", "I'm sorry, an unexpected error occurred.");
+            Map<String, Object> choice = new HashMap<>();
+            choice.put("message", message);
+            List<Map<String, Object>> choices = new ArrayList<>();
+            choices.add(choice);
+            errorMap.put("choices", choices);
+            return errorMap;
         }
     }
     

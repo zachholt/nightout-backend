@@ -3,6 +3,7 @@ package com.zachholt.nightout.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zachholt.nightout.models.ChatMessage;
 import com.zachholt.nightout.services.AiService;
+import com.zachholt.nightout.services.UserService;
 //import com.zachholt.nightout.services.ChatMessageService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,6 +27,11 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.UUID;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Collection;
+import java.util.stream.Collectors;
+import java.lang.StringBuilder;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -37,6 +43,9 @@ public class ChatController {
     
     @Autowired
     private AiService aiService;
+    
+    @Autowired
+    private UserService userService;
     
     //@Autowired
     //private ChatMessageService chatMessageService;
@@ -92,10 +101,95 @@ public class ChatController {
             }
         }
         
-        // Add current user message
+        // Add current user message, enriched with location information if available
         Map<String, Object> userMessage = new HashMap<>();
         userMessage.put("role", "user");
-        userMessage.put("content", chatRequest.getUserMessage());
+        
+        // Enhance message with location context if available
+        String messageContent = chatRequest.getUserMessage();
+        
+        // Check if message is asking about where people are
+        boolean isAskingAboutCrowds = messageContent.toLowerCase().contains("where's everyone at") || 
+                                      messageContent.toLowerCase().contains("where is everyone") ||
+                                      messageContent.toLowerCase().contains("crowd") ||
+                                      messageContent.toLowerCase().contains("busy place") ||
+                                      messageContent.toLowerCase().contains("popular spot");
+        
+        StringBuilder contextBuilder = new StringBuilder();
+        
+        // Add location context if available
+        if (chatRequest.getLatitude() != null && chatRequest.getLongitude() != null) {
+            if (chatRequest.getLocationName() != null && !chatRequest.getLocationName().isEmpty()) {
+                contextBuilder.append("My current location is near ")
+                              .append(chatRequest.getLocationName())
+                              .append(" (coordinates: ")
+                              .append(chatRequest.getLatitude())
+                              .append(", ")
+                              .append(chatRequest.getLongitude())
+                              .append("). ");
+            } else {
+                contextBuilder.append("My current coordinates are: ")
+                              .append(chatRequest.getLatitude())
+                              .append(", ")
+                              .append(chatRequest.getLongitude())
+                              .append(". ");
+            }
+            
+            // Add crowd information if the user is asking about it
+            if (isAskingAboutCrowds) {
+                try {
+                    // Default radius of 2km
+                    double radiusInMeters = 2000.0;
+                    
+                    // Get users in the area
+                    Collection<?> usersNearby = userService.getUsersByLocation(
+                        chatRequest.getLatitude(), 
+                        chatRequest.getLongitude(), 
+                        radiusInMeters
+                    );
+                    
+                    int userCount = usersNearby != null ? usersNearby.size() : 0;
+                    
+                    // Get current time
+                    LocalDateTime now = LocalDateTime.now();
+                    String dayOfWeek = now.getDayOfWeek().toString();
+                    String timeOfDay = now.format(DateTimeFormatter.ofPattern("HH:mm"));
+                    
+                    contextBuilder.append("There are currently ")
+                                  .append(userCount)
+                                  .append(" people using NightOut near me. ")
+                                  .append("It's ")
+                                  .append(dayOfWeek)
+                                  .append(" at ")
+                                  .append(timeOfDay)
+                                  .append(". ");
+                                  
+                    if (userCount > 0) {
+                        contextBuilder.append("Popular locations right now include: ");
+                        // Note: This is where you would add actual location data if available
+                        contextBuilder.append("local bars, restaurants, and entertainment venues based on the time and day. ");
+                    }
+                } catch (Exception e) {
+                    logger.error("Error fetching user density data", e);
+                }
+            }
+        }
+        
+        // Add time context
+        LocalDateTime now = LocalDateTime.now();
+        String dayOfWeek = now.getDayOfWeek().toString();
+        String timeOfDay = now.format(DateTimeFormatter.ofPattern("HH:mm"));
+        contextBuilder.append("It's currently ")
+                      .append(dayOfWeek)
+                      .append(" at ")
+                      .append(timeOfDay)
+                      .append(". ");
+        
+        // Add context to the beginning of the message
+        messageContent = contextBuilder.toString() + messageContent;
+        logger.info("Enhanced user message with context: {}", messageContent);
+        
+        userMessage.put("content", messageContent);
         messages.add(userMessage);
         
         return messages;

@@ -29,18 +29,29 @@ public class CoordinateService {
 
     @Transactional
     public Coordinate updateLocation(Long userId, Double latitude, Double longitude) {
+        // Find the user first to ensure they exist
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
-        // Delete existing coordinate if it exists
-        coordinateRepository.deleteByUserId(userId);
+        // Try to find existing coordinate for this user
+        Coordinate coordinate = coordinateRepository.findByUserId(userId)
+            .orElse(null); // Find existing or return null
 
-        // Create new coordinate
-        Coordinate coordinate = new Coordinate();
-        coordinate.setUser(user);
-        coordinate.setLatitude(latitude);
-        coordinate.setLongitude(longitude);
+        if (coordinate != null) {
+            // Update existing coordinate
+            coordinate.setLatitude(latitude);
+            coordinate.setLongitude(longitude);
+            // Note: createdAt timestamp remains from the initial creation
+        } else {
+            // Create a new coordinate if one doesn't exist
+            coordinate = new Coordinate();
+            coordinate.setUser(user);
+            coordinate.setLatitude(latitude);
+            coordinate.setLongitude(longitude);
+            // createdAt is set automatically by the Coordinate constructor/persistence logic
+        }
 
+        // Save the updated or new coordinate
         return coordinateRepository.save(coordinate);
     }
 

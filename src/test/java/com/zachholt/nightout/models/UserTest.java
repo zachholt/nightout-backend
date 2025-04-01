@@ -14,6 +14,7 @@ public class UserTest {
 
     private Validator validator;
     private User user;
+    private Coordinate coordinate;
 
     @BeforeEach
     void setUp() {
@@ -27,8 +28,9 @@ public class UserTest {
         user.setPassword("password123");
         user.setCreatedAt(LocalDateTime.now());
         user.setProfileImage("https://example.com/test.jpg");
-        user.setLatitude(40.7128);
-        user.setLongitude(-74.0060);
+        
+        coordinate = new Coordinate(user, 40.7128, -74.0060);
+        user.setCoordinate(coordinate);
     }
 
     @Test
@@ -66,17 +68,19 @@ public class UserTest {
     }
 
     @Test
-    void whenSettingValidLatitude_thenGetterReturnsValue() {
-        Double latitude = 42.3601;
-        user.setLatitude(latitude);
-        assertEquals(latitude, user.getLatitude());
+    void whenCoordinateIsSet_thenGetterReturnsValue() {
+        Coordinate newCoord = new Coordinate(user, 1.0, 1.0);
+        user.setCoordinate(newCoord);
+        assertNotNull(user.getCoordinate());
+        assertEquals(1.0, user.getCoordinate().getLatitude());
+        assertEquals(1.0, user.getCoordinate().getLongitude());
+        assertEquals(user, user.getCoordinate().getUser());
     }
 
     @Test
-    void whenSettingValidLongitude_thenGetterReturnsValue() {
-        Double longitude = -71.0589;
-        user.setLongitude(longitude);
-        assertEquals(longitude, user.getLongitude());
+    void whenCoordinateIsSetToNull_thenGetterReturnsNull() {
+        user.setCoordinate(null);
+        assertNull(user.getCoordinate());
     }
 
     @Test

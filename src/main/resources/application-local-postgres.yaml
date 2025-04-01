@@ -1,0 +1,68 @@
+spring:
+  application:
+    name: NightoutAPI-Local-Postgres
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nightoutdb
+    driverClassName: org.postgresql.Driver
+    username: postgres
+    password: postgres
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      initialization-fail-timeout: 60000
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    defer-datasource-initialization: true
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      continue-on-error: true
+  codec:
+    max-in-memory-size: 10MB
+  webflux:
+    base-path: /api
+
+server:
+  port: 8080
+  connection-timeout: 120s
+  tomcat:
+    max-threads: 200
+    connection-timeout: 120000
+
+# Swagger/OpenAPI configuration
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /api-docs
+  show-actuator: false
+  packages-to-scan: com.zachholt.nightout.controllers
+
+ai:
+  api:
+    url: http://localhost:8080/mock-ai
+    token: test_token
+
+# Enable actuator endpoints for local development
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always 
