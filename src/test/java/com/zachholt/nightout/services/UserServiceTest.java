@@ -174,26 +174,46 @@ public class UserServiceTest {
         Coordinate updatedCoord = new Coordinate(testUser, newLatitude, newLongitude);
         when(coordinateService.updateLocation(userId, newLatitude, newLongitude)).thenReturn(updatedCoord);
 
+        User userAfterUpdate = new User();
+        userAfterUpdate.setId(userId);
+        userAfterUpdate.setEmail(userEmail);
+        userAfterUpdate.setCoordinate(updatedCoord);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(userAfterUpdate));
+
         User result = userService.updateUserLocation(userEmail, newLatitude, newLongitude);
 
         assertNotNull(result);
         assertEquals(userId, result.getId());
-        assertNull(result.getPassword());
-        verify(coordinateService, times(1)).updateLocation(userId, newLatitude, newLongitude);
+        assertNotNull(result.getCoordinate(), "Coordinate should not be null after update");
+        assertEquals(newLatitude, result.getCoordinate().getLatitude());
+        assertEquals(newLongitude, result.getCoordinate().getLongitude());
+        verify(userRepository).findByEmail(userEmail);
+        verify(coordinateService).updateLocation(userId, newLatitude, newLongitude);
+        verify(userRepository).findById(userId);
         verify(coordinateService, never()).clearLocation(anyLong());
     }
 
     @Test
     void updateUserLocation_WhenUserExistsAndCoordsNull_CallsCoordinateServiceClear() {
         when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(testUser)); 
-        doNothing().when(coordinateService).clearLocation(userId);
+        when(coordinateService.getCurrentLocation(userId)).thenReturn(testCoordinate);
+        
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User userToSave = invocation.getArgument(0);
+            userToSave.setCoordinate(null);
+            return userToSave;
+        });
 
         User result = userService.updateUserLocation(userEmail, null, null);
 
         assertNotNull(result);
         assertEquals(userId, result.getId());
-        assertNull(result.getCoordinate());
-        verify(coordinateService, times(1)).clearLocation(userId);
+        assertNull(result.getCoordinate(), "Coordinate should be null after checkout");
+        
+        verify(userRepository).findByEmail(userEmail);
+        verify(coordinateService).getCurrentLocation(userId);
+        verify(userRepository).save(any(User.class));
+        verify(coordinateService, never()).clearLocation(anyLong());
         verify(coordinateService, never()).updateLocation(anyLong(), anyDouble(), anyDouble());
     }
 

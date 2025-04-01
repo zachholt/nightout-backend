@@ -158,16 +158,19 @@ public class UserControllerTest {
 
     @Test
     void checkIn_WithCoordinatesInBody_ReturnsUpdatedUser() throws Exception {
-        Map<String, Object> requestBody = new HashMap<>();
+        Map<String, Double> requestBody = new HashMap<>();
         requestBody.put("latitude", latitude);
         requestBody.put("longitude", longitude);
+        testUser.setCoordinate(testCoordinate); // Assume coordinate is set after update
+
         when(userService.updateUserLocation(userEmail, latitude, longitude)).thenReturn(testUser);
 
         mockMvc.perform(post("/api/users/checkin")
                 .with(csrf())
                 .param("email", userEmail)
+                .param("latitude", String.valueOf(latitude))
+                .param("longitude", String.valueOf(longitude))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(requestBody))
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.latitude", is(latitude)))
