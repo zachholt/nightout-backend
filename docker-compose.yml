@@ -31,8 +31,21 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_JPA_HIBERNATE_DDL_AUTO: none
+    networks:
+      - nightout-network
+
+  nginx:
+    image: nginx:latest
+    container_name: nightout-nginx
+    depends_on:
+      - nightout-backend
     ports:
-      - "8080:8080"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/selfsigned.crt:/etc/nginx/ssl/selfsigned.crt:ro
+      - ./nginx/selfsigned.key:/etc/nginx/ssl/selfsigned.key:ro
     networks:
       - nightout-network
 
